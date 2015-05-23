@@ -1,6 +1,6 @@
 <?php
 
-class AdvertiserController extends AdminController {
+class MerchantController extends AdminController {
 
     public function __construct()
     {
@@ -12,9 +12,9 @@ class AdvertiserController extends AdminController {
         //$this->crumb->append('Home','left',true);
         //$this->crumb->append(strtolower($this->controller_name));
 
-        $this->model = new Member();
+        $this->model = new Merchant();
         //$this->model = DB::collection('documents');
-        $this->title = 'Advertisers';
+        $this->title = 'Merchant';
 
     }
 
@@ -205,17 +205,15 @@ class AdvertiserController extends AdminController {
     {
 
         $this->heads = array(
+            array('ID',array('search'=>true,'sort'=>true)),
             array('Merchant Name',array('search'=>true,'sort'=>true ,'attr'=>array('class'=>'span2'))),
-            array('Legacy ID',array('search'=>true,'sort'=>true ,'attr'=>array('class'=>'span2'))),
-            array('Status',array('search'=>true,'sort'=>true ,'select'=>array(''=>'All','active'=>'Active','inactive'=>'Inactive') ,'attr'=>array('class'=>'span2'))),
-            array('Category',array('search'=>true,'select'=>Prefs::getShopCategory()->shopcatToSelection('slug', 'name' ) ,'sort'=>true)),
+            array('GID',array('search'=>true,'sort'=>true)),
             array('URL',array('search'=>true,'sort'=>true)),
             array('Email',array('search'=>true,'sort'=>true)),
             array('Phone',array('search'=>true,'sort'=>true)),
             array('Street',array('search'=>true,'sort'=>true)),
             array('City',array('search'=>true,'sort'=>true)),
-            array('Created',array('search'=>true,'sort'=>true,'datetimerange'=>true)),
-            array('Last Update',array('search'=>true,'sort'=>true,'datetimerange'=>true)),
+            array('Created',array('search'=>true,'sort'=>true,'datetimerange'=>true))
         );
 
         //print $this->model->where('docFormat','picture')->get()->toJSON();
@@ -240,28 +238,41 @@ class AdvertiserController extends AdminController {
     {
 
         $this->fields = array(
+            array('id',array('kind'=>'numeric', 'query'=>'like','pos'=>'both','show'=>true)),
             array('merchantname',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
-            array('legacyId',array('kind'=>'numeric', 'query'=>'like','pos'=>'both','show'=>true)),
-            array('status',array('kind'=>'text', 'query'=>'exact','pos'=>'after','show'=>true)),
-            array('shopcategoryLink',array('kind'=>'text', 'callback'=>'catName' ,'query'=>'like','pos'=>'both','show'=>true)),
+            array('group_id',array('kind'=>'numeric', 'query'=>'like','pos'=>'both','show'=>true)),
             array('mc_url',array('kind'=>'text','query'=>'like','pos'=>'both','attr'=>array('class'=>'expander'),'show'=>true)),
             array('email',array('kind'=>'text','query'=>'like','pos'=>'both','attr'=>array('class'=>'expander'),'show'=>true)),
             array('phone',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
             array('street',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
             array('city',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
-            array('createdDate',array('kind'=>'datetimerange','query'=>'like','pos'=>'both','show'=>true)),
-            array('lastUpdate',array('kind'=>'datetimerange','query'=>'like','pos'=>'both','show'=>true)),
+            array('created',array('kind'=>'datetimerange','query'=>'like','pos'=>'both','show'=>true))
         );
 
+        /*
         $categoryFilter = Input::get('categoryFilter');
         if($categoryFilter != ''){
             $this->additional_query = array('shopcategoryLink'=>$categoryFilter, 'group_id'=>4);
         }
+        */
 
+        $this->def_order_by = 'created';
         $this->place_action = 'first';
 
-        return parent::postIndex();
+        return parent::postSQLIndex();
     }
+
+
+    public function SQL_additional_query($model)
+    {
+
+        $model = $model->where('group_id', '=', 4);
+
+        return $model;
+
+    }
+
+
 
     public function beforeSave($data)
     {
@@ -434,16 +445,15 @@ class AdvertiserController extends AdminController {
         $this->heads = null;
 
         $this->fields = array(
-            array('merchantname',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
             array('id',array('kind'=>'numeric', 'query'=>'like','pos'=>'both','show'=>true)),
-            array('shopcategory',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
-            array('shopcategoryLink',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
+            array('merchantname',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
+            array('group_id',array('kind'=>'numeric', 'query'=>'like','pos'=>'both','show'=>true)),
+            array('mc_url',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
             array('email',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
             array('phone',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
             array('street',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
             array('city',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
-            array('createdDate',array('kind'=>'datetimerange','query'=>'like','pos'=>'both','show'=>true)),
-            array('lastUpdate',array('kind'=>'datetimerange','query'=>'like','pos'=>'both','show'=>true)),
+            array('created',array('kind'=>'datetimerange','query'=>'like','pos'=>'both','show'=>true))
         );
 
         return parent::postDlxl();

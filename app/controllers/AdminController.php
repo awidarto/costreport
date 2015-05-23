@@ -156,6 +156,11 @@ class AdminController extends Controller {
         return $this->tableResponder();
     }
 
+    public function postSQLIndex()
+    {
+        return $this->SQLtableResponder();
+    }
+
 	public function pageGenerator(){
 
 		//$action_selection = Former::select( Config::get('kickstart.actionselection'))->name('action');
@@ -490,14 +495,16 @@ class AdminController extends Controller {
         $count_display_all = $this->model->count();
 
         if(is_array($q) && count($q) > 0){
-            $results = $this->model->whereRaw($q)->skip( $pagestart )->take( $pagelength )->orderBy($sort_col, $sort_dir )->get();
-
             $count_display_all = $this->model->whereRaw($q)->count();
 
+            $results = $this->model->whereRaw($q)->skip( $pagestart )->take( $pagelength )->orderBy($sort_col, $sort_dir )->get();
+
+
         }else{
+            $count_display_all = $this->model->count();
+
             $results = $this->model->skip( $pagestart )->take( $pagelength )->orderBy($sort_col, $sort_dir )->get();
 
-            $count_display_all = $this->model->count();
 
         }
 
@@ -624,6 +631,402 @@ class AdminController extends Controller {
 
 		return Response::json($result);
 	}
+
+    public function SQLtableResponder()
+    {
+
+        $fields = $this->fields;
+
+        $count_all = 0;
+        $count_display_all = 0;
+
+        //print_r($fields);
+
+        //array_unshift($fields, array('select',array('kind'=>false)));
+        array_unshift($fields, array('seq',array('kind'=>false)));
+        if($this->place_action == 'both' || $this->place_action == 'first'){
+            array_unshift($fields, array('action',array('kind'=>false)));
+        }
+
+        $pagestart = Input::get('iDisplayStart');
+        $pagelength = Input::get('iDisplayLength');
+
+        $limit = array($pagelength, $pagestart);
+
+        $defsort = 1;
+        $defdir = -1;
+
+        $idx = 0;
+        $q = array();
+
+        $hilite = array();
+        $hilite_replace = array();
+
+        $model = $this->model;
+
+
+        for($i = 0;$i < count($fields);$i++){
+            $idx = $i;
+
+            //print_r($fields[$i]);
+
+            $field = $fields[$i][0];
+            $type = $fields[$i][1]['kind'];
+
+            $qval = '';
+
+
+
+            if(Input::get('sSearch_'.$i))
+            {
+                if( $type == 'text'){
+                    if($fields[$i][1]['query'] == 'like'){
+                        $pos = $fields[$i][1]['pos'];
+                        if($pos == 'both'){
+                            //$model->whereRegex($field,'/'.Input::get('sSearch_'.$idx).'/i');
+                            $model = $model->where($field,'like','%'.Input::get('sSearch_'.$idx).'%');
+
+                            $qval = new MongoRegex('/'.Input::get('sSearch_'.$idx).'/i');
+                        }else if($pos == 'before'){
+                            //$this->model->whereRegex($field,'/^'.Input::get('sSearch_'.$idx).'/i');
+                            $model = $model->where($field,'like','%'.Input::get('sSearch_'.$idx));
+
+                            $qval = new MongoRegex('/^'.Input::get('sSearch_'.$idx).'/i');
+                        }else if($pos == 'after'){
+                            //$this->model->whereRegex($field,'/'.Input::get('sSearch_'.$idx).'$/i');
+                            $model = $model->where($field,'like', Input::get('sSearch_'.$idx).'%');
+
+                            $qval = new MongoRegex('/'.Input::get('sSearch_'.$idx).'$/i');
+                        }
+                    }else{
+                        $qval = Input::get('sSearch_'.$idx);
+
+                        $model = $model->where($field,$qval);
+                    }
+
+                    $q[$field] = $qval;
+
+                }elseif($type == 'numeric' || $type == 'currency'){
+                    $str = Input::get('sSearch_'.$idx);
+
+                    $sign = null;
+
+                    $strval = trim(str_replace(array('<','>','='), '', $str));
+
+                    $qval = (double)$strval;
+
+                    /*
+                    if(is_null($sign)){
+                        $qval = new MongoInt32($strval);
+                    }else{
+                        $str = new MongoInt32($str);
+                        $qval = array($sign=>$str);
+                    }
+                    */
+
+
+                    if(strpos($str, "<=") !== false){
+                        $sign = '$lte';
+
+                        //$this->model->whereLte($field,$qval);
+                        $model = $model->where($field,'<=',$qval);
+
+                    }elseif(strpos($str, ">=") !== false){
+                        $sign = '$gte';
+
+                        //$this->model->whereGte($field,$qval);
+                        $model = $model->where($field,'>=',$qval);
+
+                    }elseif(strpos($str, ">") !== false){
+                        $sign = '$gt';
+
+                        //$this->model->whereGt($field,$qval);
+                        $model = $model->where($field,'>',$qval);
+
+                    }elseif(stripos($str, "<") !== false){
+                        $sign = '$lt';
+
+                        //$this->model->whereLt($field,$qval);
+                        $model = $model->where($field,'<',$qval);
+
+                    }else{
+
+                        $model = $model->where($field,'=',$qval);
+
+                    }
+
+                    //print $sign;
+                    if(!is_null($sign)){
+                        $qval = array($sign=>$qval);
+                    }
+
+                    $q[$field] = $qval;
+
+                }elseif($type == 'date'|| $type == 'datetime'){
+                    $datestring = Input::get('sSearch_'.$idx);
+                    $datestring = date('d-m-Y', $datestring / 1000);
+
+                    if (($timestamp = $datestring) === false) {
+
+                    } else {
+                        //$daystart = new MongoDate(strtotime($datestring.' 00:00:00'));
+                        //$dayend = new MongoDate(strtotime($datestring.' 23:59:59'));
+
+                        $daystart = $datestring.' 00:00:00';
+                        $dayend = $datestring.' 23:59:59';
+
+                        //$qval = array($field =>array('$gte'=>$daystart,'$lte'=>$dayend));
+                        //echo "$str == " . date('l dS \o\f F Y h:i:s A', $timestamp);
+
+                        $model = $model->whereBetween($field,array($daystart,$dayend));
+
+                    }
+                    $qval = array('$gte'=>$daystart,'$lte'=>$dayend);
+                    //$qval = Input::get('sSearch_'.$idx);
+
+                    $q[$field] = $qval;
+                }elseif($type == 'daterange'){
+                    $datestring = Input::get('sSearch_'.$idx);
+
+                    if($datestring != ''){
+                        $dates = explode(' - ', $datestring);
+
+                        if(count($dates) == 2){
+                            $daystart = date('Y-m-d',strtotime($dates[0])).' 00:00:00';
+                            $dayend = date('Y-m-d',strtotime($dates[1])).' 23:59:59';
+
+                            //$qval = array($field =>array('$gte'=>$daystart,'$lte'=>$dayend));
+
+                            $qval = array('$gte'=>$daystart,'$lte'=>$dayend);
+                            //$qval = Input::get('sSearch_'.$idx);
+
+                            $q[$field] = $qval;
+
+                            $model = $model->whereBetween($field,array($daystart,$dayend));
+
+
+                        }
+
+                    }
+
+                }elseif($type == 'datetimerange'){
+                    $datestring = Input::get('sSearch_'.$idx);
+
+                    if($datestring != ''){
+                        $dates = explode(' - ', $datestring);
+
+                        //print_r($dates);
+
+                        if(count($dates) == 2){
+                            $daystart = date('Y-m-d H:i:s',strtotime($dates[0]));
+                            $dayend = date('Y-m-d H:i:s',strtotime($dates[1]));
+
+                            //$qval = array($field =>array('$gte'=>$daystart,'$lte'=>$dayend));
+
+                            $qval = array('$gte'=>$daystart,'$lte'=>$dayend);
+                            //$qval = Input::get('sSearch_'.$idx);
+
+                            $model = $model->whereBetween($field,array($daystart,$dayend));
+
+                            $q[$field] = $qval;
+                        }
+
+                    }
+
+                }
+
+
+            }
+
+        }
+
+        $model = $this->SQL_additional_query($model);
+
+        /* first column is always sequence number, so must be omitted */
+
+        $fidx = Input::get('iSortCol_0') - 1;
+
+        $fidx = ($fidx == -1 )?0:$fidx;
+
+        if(Input::get('iSortCol_0') == 0){
+            $sort_col = $this->def_order_by;
+
+            $sort_dir = $this->def_order_dir;
+        }else{
+            $sort_col = $fields[$fidx][0];
+
+            $sort_dir = Input::get('sSortDir_0');
+
+        }
+
+
+        /*
+        if(count($q) > 0){
+            $results = $model->skip( $pagestart )->take( $pagelength )->orderBy($sort_col, $sort_dir )->get();
+            $count_display_all = $model->count();
+        }else{
+            $results = $model->find(array(),array(),array($sort_col=>$sort_dir),$limit);
+            $count_display_all = $model->count();
+        }
+        */
+
+        //$model->where('docFormat','picture');
+
+        $count_all = $model->count();
+        $count_display_all = $model->count();
+
+        if(is_array($q) && count($q) > 0){
+
+            $count_display_all = $model->count();
+
+            $results = $model->skip( $pagestart )->take( $pagelength )->orderBy($sort_col, $sort_dir )->get();
+
+            //$last_query = $this->get_last_query();
+            //$last_query = DB::getQueryLog();
+
+
+        }else{
+
+            $count_display_all = $model->count();
+
+            $results = $model->skip( $pagestart )->take( $pagelength )->orderBy($sort_col, $sort_dir )->get();
+
+            //$last_query = $this->get_last_query();
+            //$last_query = DB::getQueryLog();
+
+
+        }
+
+        //print_r($model);
+
+        //exit();
+
+        //$queries = DB::getQueryLog();
+        $last_query = $model;
+        //print_r($results->toArray());
+
+
+        $aadata = array();
+
+        $form = $this->form;
+
+        $counter = 1 + $pagestart;
+
+        foreach ($results as $doc) {
+
+            $extra = $doc;
+
+            //$select = Former::checkbox('sel_'.$doc['_id'])->check(false)->id($doc['_id'])->class('selector');
+            $actionMaker = $this->makeActions;
+
+            $actions = $this->$actionMaker($doc);
+
+            $row = array();
+
+            $row[] = $counter;
+
+            if($this->show_select == true){
+                //$sel = Former::checkbox('sel_'.$doc['_id'])->check(false)->label(false)->id($doc['_id'])->class('selector')->__toString();
+                $sel = '<input type="checkbox" name="sel_'.$doc['_id'].'" id="'.$doc['_id'].'" value="'.$doc['_id'].'" class="selector" />';
+                $row[] = $sel;
+            }
+
+            if($this->place_action == 'both' || $this->place_action == 'first'){
+                $row[] = $actions;
+            }
+
+
+            foreach($fields as $field){
+                if($field[1]['kind'] != false && $field[1]['show'] == true){
+
+                    $fieldarray = explode('.',$field[0]);
+                    if(is_array($fieldarray) && count($fieldarray) > 1){
+                        $fieldarray = implode('\'][\'',$fieldarray);
+                        $cstring = '$label = (isset($doc[\''.$fieldarray.'\']))?true:false;';
+                        eval($cstring);
+                    }else{
+                        $label = (isset($doc[$field[0]]))?true:false;
+                    }
+
+
+                    if($label){
+
+                        if( isset($field[1]['callback']) && $field[1]['callback'] != ''){
+                            $callback = $field[1]['callback'];
+                            $row[] = $this->$callback($doc, $field[0]);
+                        }else{
+                            if($field[1]['kind'] == 'datetime' || $field[1]['kind'] == 'datetimerange'){
+                                if($doc[$field[0]] instanceof MongoDate){
+                                    $rowitem = date('d-m-Y H:i:s',$doc[$field[0]]->sec);
+                                }elseif ($doc[$field[0]] instanceof Date) {
+                                    $rowitem = date('d-m-Y H:i:s',$doc[$field[0]]);
+                                }else{
+                                    //$rowitem = $doc[$field[0]];
+                                    if(is_array($doc[$field[0]])){
+                                        $rowitem = date('d-m-Y H:i:s', time() );
+                                    }else{
+                                        $rowitem = date('d-m-Y H:i:s',strtotime($doc[$field[0]]) );
+                                    }
+                                }
+                            }elseif($field[1]['kind'] == 'date' || $field[1]['kind'] == 'daterange'){
+                                if($doc[$field[0]] instanceof MongoDate){
+                                    $rowitem = date('d-m-Y',$doc[$field[0]]->sec);
+                                }elseif ($doc[$field[0]] instanceof Date) {
+                                    $rowitem = date('d-m-Y',$doc[$field[0]]);
+                                }else{
+                                    //$rowitem = $doc[$field[0]];
+                                    $rowitem = date('d-m-Y',strtotime($doc[$field[0]]) );
+                                }
+                            }elseif($field[1]['kind'] == 'currency'){
+                                $num = (double) $doc[$field[0]];
+                                $rowitem = number_format($num,2,',','.');
+                            }else{
+                                $rowitem = $doc[$field[0]];
+                            }
+
+                            if(isset($field[1]['attr'])){
+                                $attr = '';
+                                foreach ($field[1]['attr'] as $key => $value) {
+                                    $attr .= $key.'="'.$value.'" ';
+                                }
+                                $row[] = '<span '.$attr.' >'.$rowitem.'</span>';
+                            }else{
+                                $row[] = $rowitem;
+                            }
+
+                        }
+
+
+                    }else{
+                        $row[] = '';
+                    }
+                }
+            }
+
+            if($this->place_action == 'both'){
+                $row[] = $actions;
+            }
+
+            $row['extra'] = $extra;
+
+            $aadata[] = $row;
+
+            $counter++;
+        }
+
+        $sEcho = (int) Input::get('sEcho');
+
+        $result = array(
+            'sEcho'=>  $sEcho,
+            'iTotalRecords'=>$count_all,
+            'iTotalDisplayRecords'=> (is_null($count_display_all))?0:$count_display_all,
+            'aaData'=>$aadata,
+            'qrs'=>$last_query,
+            'sort'=>array($sort_col=>$sort_dir)
+        );
+
+        return Response::json($result);
+    }
 
 	public function getAdd(){
 
@@ -906,6 +1309,9 @@ class AdminController extends Controller {
         }
     }
 
+    public function SQL_additional_query($model){
+        return $model;
+    }
 
     public function completeHeads($heads){
 
@@ -1541,6 +1947,21 @@ class AdminController extends Controller {
         return true;
     }
 
+    function get_last_query() {
+        $queries = DB::getQueryLog();
+        $sql = end($queries);
+
+        if( ! empty($sql['bindings']))
+        {
+            $pdo = DB::getPdo();
+            foreach($sql['bindings'] as $binding)
+            {
+                  $sql['query'] = preg_replace('/\?/', $pdo->quote($binding), $sql['query'], 1);
+            }
+        }
+
+        return $sql['query'];
+    }
 
 	public function get_action_sample(){
 		\Laravel\CLI\Command::run(array('notify'));

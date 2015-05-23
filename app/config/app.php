@@ -118,6 +118,7 @@ return array(
         'Dinesh\Barcode\BarcodeServiceProvider',
         'SimpleSoftwareIO\QrCode\QrCodeServiceProvider',
         'Creitive\Breadcrumbs\BreadcrumbsServiceProvider',
+        'Barryvdh\Debugbar\ServiceProvider',
         'Pingpong\Auth2\Auth2ServiceProvider'
 	),
 
@@ -185,6 +186,7 @@ return array(
         'Validator'       => 'Illuminate\Support\Facades\Validator',
         'View'            => 'Illuminate\Support\Facades\View',
 
+        'Debugbar'        => 'Barryvdh\Debugbar\Facade',
         'Former'          => 'Former\Facades\Former',
         'Breadcrumbs'     => 'Creitive\Breadcrumbs\Facades\Breadcrumbs',
         'Image'           => 'Intervention\Image\Facades\Image',

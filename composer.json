@@ -21,6 +21,7 @@
         "simplesoftwareio/simple-qrcode": "1.1.*",
         "dinesh/barcode": "4.0.*@dev",
         "creitive/laravel4-breadcrumbs": "dev-master",
+        "barryvdh/laravel-debugbar":"~1.8",
         "dayed/auth2": "dev-master"
 	},
 	"autoload": {

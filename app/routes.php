@@ -29,6 +29,8 @@ Route::controller('scanner', 'ScannerController');
 
 Route::controller('dashboard', 'DashboardController');
 
+Route::controller('merchant', 'MerchantController');
+
 Route::controller('stats', 'StatsController');
 
 Route::controller('assettype', 'AssettypeController');
@@ -312,7 +314,7 @@ Route::get('pdf',function(){
 });
 
 
-Route::get('merchant',function(){
+Route::get('smerchant',function(){
     $q = Input::get('term');
 
     $user = Merchant::where('group_id',4)
