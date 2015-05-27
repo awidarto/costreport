@@ -52,7 +52,7 @@ Route::controller('ajax', 'AjaxController');
 
 Route::controller('profile', 'ProfileController');
 
-Route::get('/', 'DashboardController@getIndex');
+Route::get('/', 'MerchantController@getIndex');
 
 
 Route::group(array('prefix' => 'api/v1' ), function()
