@@ -210,7 +210,7 @@ class CoaController extends AdminController {
             array('Head',array('search'=>true,'sort'=>true)),
             array('Lookup',array('search'=>true,'sort'=>true)),
             array('Remarks',array('search'=>true,'sort'=>true)),
-            array('Last Update',array('search'=>true,'sort'=>true))
+            array('Last Update',array('search'=>true,'sort'=>true,'datetimerange'=>true))
         );
 
         //print $this->model->where('docFormat','picture')->get()->toJSON();

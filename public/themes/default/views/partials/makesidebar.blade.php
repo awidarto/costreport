@@ -9,7 +9,7 @@
           <ul class="nav nav-sidebar">
             <li><a href="{{ URL::to('/') }}"><i class="icon-home"></i><span>Dashboard</span></a></li>
             <li class="nav-parent">
-              <a href="#"><i class="icon-users"></i><span>HRMS</span> <span class="fa arrow"></span></a>
+              <a href="{{ URL::to('employee') }}"><i class="icon-users"></i><span>HRMS</span> <span class="fa arrow"></span></a>
               <ul class="children collapse">
                 <li><a href="{{ URL::to('employee') }}"> Employees</a></li>
                 <li><a href="{{ URL::to('/') }}"> Timesheets</a></li>

@@ -5,8 +5,6 @@
               <ul class="nav nav-icons">
                 <li><a href="#" class="toggle-sidebar-top"><span class="icon-user-following"></span></a></li>
                 <li><a href="mailbox.html"><span class="octicon octicon-mail-read"></span></a></li>
-                <li><a href="#"><span class="octicon octicon-flame"></span></a></li>
-                <li><a href="builder-page.html"><span class="octicon octicon-rocket"></span></a></li>
               </ul>
             </div>
           </div>

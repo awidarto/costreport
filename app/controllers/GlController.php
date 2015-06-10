@@ -206,8 +206,8 @@ class GlController extends AdminController {
 
 
         $this->heads = array(
-            array('Period',array('search'=>true,'sort'=>true)),
-            array('Date',array('search'=>true,'sort'=>true)),
+            array('Period',array('search'=>true,'sort'=>true,'datetimerange'=>true)),
+            array('Date',array('search'=>true,'sort'=>true,'datetimerange'=>true)),
             array('JV Ref',array('search'=>true,'sort'=>true)),
             array('Account',array('search'=>true,'sort'=>true)),
             array('Account Description',array('search'=>true,'sort'=>true)),
@@ -222,7 +222,7 @@ class GlController extends AdminController {
 
         $this->title = 'General Ledger';
 
-        $this->place_action = 'none';
+        $this->place_action = 'first';
 
         Breadcrumbs::addCrumb('Cost Report',URL::to( strtolower($this->controller_name) ));
 
@@ -261,7 +261,7 @@ class GlController extends AdminController {
 
         $this->def_order_by = 'TRANS_DATETIME';
         $this->def_order_dir = 'DESC';
-        $this->place_action = 'none';
+        $this->place_action = 'first';
 
         return parent::postSQLIndex();
     }
