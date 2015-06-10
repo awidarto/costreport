@@ -52,7 +52,7 @@ return array(
             'port'     => 27017,
             'username' => 'assetman',
             'password' => 'hotswap',
-            'database' => 'jayon_ad'
+            'database' => 'lundin'
         ),
 
 		'sqlite' => array(
