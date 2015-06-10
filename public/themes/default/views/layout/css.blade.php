@@ -16,6 +16,6 @@
 
 
 
-    {{ HTML::style('font-awesome/css/font-awesome.min.css') }}
+    {{-- HTML::style('font-awesome/css/font-awesome.min.css') --}}
 
     {{ HTML::style('css/daterangepicker-bs3.css') }}

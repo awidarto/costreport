@@ -210,7 +210,7 @@ class CoaController extends AdminController {
             array('Head',array('search'=>true,'sort'=>true)),
             array('Lookup',array('search'=>true,'sort'=>true)),
             array('Remarks',array('search'=>true,'sort'=>true)),
-            array('Last Update',array('search'=>true,'sort'=>true,'datetimerange'=>true))
+            array('Last Update',array('search'=>true,'sort'=>true,'daterange'=>true))
         );
 
         //print $this->model->where('docFormat','picture')->get()->toJSON();
@@ -240,7 +240,7 @@ class CoaController extends AdminController {
             array('S_HEAD',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
             array('LOOKUP',array('kind'=>'text','query'=>'like','pos'=>'both','attr'=>array('class'=>'expander'),'show'=>true)),
             array('LONG_DESCR',array('kind'=>'text','query'=>'like','pos'=>'both','attr'=>array('class'=>'expander'),'show'=>true)),
-            array('LAST_CHANGE_DATETIME',array('kind'=>'datetimerange','query'=>'like','pos'=>'both','show'=>true))
+            array('LAST_CHANGE_DATETIME',array('kind'=>'daterange','query'=>'like','pos'=>'both','show'=>true))
         );
 
         /*

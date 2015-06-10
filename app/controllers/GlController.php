@@ -207,7 +207,7 @@ class GlController extends AdminController {
 
         $this->heads = array(
             array('Period',array('search'=>true,'sort'=>true,'datetimerange'=>true)),
-            array('Date',array('search'=>true,'sort'=>true,'datetimerange'=>true)),
+            array('Date',array('search'=>true,'sort'=>true,'daterange'=>true)),
             array('JV Ref',array('search'=>true,'sort'=>true)),
             array('Account',array('search'=>true,'sort'=>true)),
             array('Account Description',array('search'=>true,'sort'=>true)),
@@ -241,7 +241,7 @@ class GlController extends AdminController {
 
         $this->fields = array(
             array('PERIOD',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
-            array('TRANS_DATETIME',array('kind'=>'datetimerange', 'query'=>'like','pos'=>'both','show'=>true)),
+            array('TRANS_DATETIME',array('kind'=>'daterange', 'query'=>'like','pos'=>'both','show'=>true)),
             array('TREFERENCE',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
             array('ACCNT_CODE',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
             array('DESCRIPTN',array('kind'=>'text','query'=>'like','pos'=>'both','attr'=>array('class'=>'expander'),'show'=>true)),

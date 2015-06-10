@@ -479,6 +479,17 @@ select.input-sm {
 
         });
 
+        $('.daterangespicker').on('apply.daterangepicker',function(ev, picker){
+            console.log(this.value);
+            var search_index = this.id;
+            var datevals = this.value;
+
+            oTable.column( search_index )
+                    .search( datevals )
+                    .draw();
+
+        });
+
 		$('thead select.selector').change( function () {
 			var search_index = this.id;
             oTable.column( search_index )
