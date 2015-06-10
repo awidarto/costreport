@@ -2,8 +2,8 @@
         ->options(Prefs::getShopCategory()->shopcatToSelection('slug', 'name' ) )
         ->id('assigned-product-filter');
 }}&nbsp;&nbsp;<br />
-<a class="btn btn-info btn-sm" id="assign-product">Assign Merchant to Category</a>
-<a class="btn btn-info btn-sm" id="sync_legacy"><i class="fa fa-refresh"></i> Sync with Legacy Data</a>
+<a class="btn btn-transparent" id="assign-product"><i class="fa fa-plus-square-o"></i> Assign Merchant to Category</a>
+<a class="btn btn-transparent" id="sync_legacy"><i class="fa fa-refresh"></i> Sync with Legacy Data</a>
 <span class="syncing" style="display:none;">Processing...</span>
 
 <div id="assign-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">

@@ -262,7 +262,6 @@ class MerchantController extends AdminController {
         return parent::postSQLIndex();
     }
 
-
     public function SQL_additional_query($model)
     {
 

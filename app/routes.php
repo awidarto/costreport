@@ -38,6 +38,18 @@ Route::controller('assetlocation', 'AssetlocationController');
 Route::controller('rack', 'RackController');
 Route::controller('asset', 'AssetController');
 
+Route::controller('employee', 'EmployeeController');
+
+Route::controller('holiday', 'HolidayController');
+Route::controller('company', 'CompanyController');
+Route::controller('dateparam', 'DateparamController');
+
+Route::controller('nonstafftime', 'NonstafftimeController');
+Route::controller('stafftime', 'StafftimeController');
+
+Route::controller('coa', 'CoaController');
+Route::controller('gl', 'GlController');
+
 Route::controller('approval', 'ApprovalController');
 Route::controller('activity', 'ActivityController');
 Route::controller('access', 'AccessController');
@@ -52,7 +64,7 @@ Route::controller('ajax', 'AjaxController');
 
 Route::controller('profile', 'ProfileController');
 
-Route::get('/', 'MerchantController@getIndex');
+Route::get('/', 'DashboardController@getIndex');
 
 
 Route::group(array('prefix' => 'api/v1' ), function()
@@ -525,5 +537,34 @@ function sa($item){
         return  'active';
     }else{
         return '';
+    }
+}
+
+function hsa($item){
+    if(is_array($item)){
+        foreach ($item as $it) {
+            if(URL::to($it) == URL::full() ){
+                return  'nav-active active';
+            }else{
+                return '';
+            }
+        }
+    }else{
+        if(URL::to($item) == URL::full() ){
+            return  'nav-active active';
+        }else{
+            return '';
+        }
+    }
+}
+
+function boldfirst($title){
+    $t = explode(' ',$title);
+    if(count($t) > 1){
+        $t[0] = '<strong>'.$t[0].'</strong>';
+        $title = implode(' ',$t);
+        return $title;
+    }else{
+        return '<strong>'.$title.'</strong>';
     }
 }

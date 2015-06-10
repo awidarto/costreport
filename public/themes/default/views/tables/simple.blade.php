@@ -1,4 +1,4 @@
-@extends('layout.fixed')
+@extends('layout.make')
 
 @section('content')
 
@@ -63,6 +63,11 @@ td i.fa{
 td a{
     line-height: 22px;
 }
+
+td{
+    font-size: 12px;
+}
+
 select.input-sm {
     height: 30px;
     line-height: 30px;
@@ -81,6 +86,9 @@ select.input-sm {
     display:inline-block;
 }
 
+.calendar-date thead th{
+    border: none;
+}
 
 </style>
 
@@ -89,17 +97,17 @@ select.input-sm {
 <div class="row-fluid box">
    <div class="col-md-12 box-content">
         <table class="table table-condensed dataTable">--}}
-<div class="container">
+<div class="container" style="padding-top:40px;">
     <div class="row">
         <div class="col-md-6 command-bar">
 
             @if(isset($can_add) && $can_add == true)
-                <a href="{{ URL::to($addurl) }}" class="btn btn-sm btn-primary">Add</a>
-                <a href="{{ URL::to($importurl) }}" class="btn btn-sm btn-primary">Import Excel</a>
+                <a href="{{ URL::to($addurl) }}" class="btn btn-transparent btn-primary"><i class="fa fa-plus"></i> Add</a>
+                <a href="{{ URL::to($importurl) }}" class="btn btn-transparent btn-primary"><i class="fa fa-upload"></i> Excel</a>
             @endif
 
-            <a class="btn btn-info btn-sm" id="download-xls">Download Excel</a>
-            <a class="btn btn-info btn-sm" id="download-csv">Download CSV</a>
+            <a class="btn btn-info btn-transparent" id="download-xls"><i class="fa fa-download"></i> Excel</a>
+            <a class="btn btn-info btn-transparent" id="download-csv"><i class="fa fa-download"></i> CSV</a>
 
             @if(isset($is_report) && $is_report == true)
                 {{ $report_action }}
@@ -339,8 +347,12 @@ select.input-sm {
 		        "sAjaxSource": "{{$ajaxsource}}",
 				"oLanguage": { "sSearch": "Search "},
 				"sPaginationType": "full_numbers",
-                "sDom": '<".container" <"#paginator" lp>i >rt',
+                "sDom": 'lpirt',
 				"iDisplayLength":50,
+                "initComplete": function(settings, json){
+                    //alert( 'DataTables has finished its initialisation.' );
+                    $('.dataTables_length select').select2('destroy');
+                },
 
 				@if(isset($excludecol) && $excludecol != '')
 				"oColVis": {
@@ -368,6 +380,7 @@ select.input-sm {
 
 			}
         );
+
 
         @if($table_dnd == true)
         	oTable.rowReordering(

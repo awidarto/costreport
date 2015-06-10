@@ -1,4 +1,4 @@
-@extends('layout.fixedtwo')
+@extends('layout.maketwo')
 
 @section('left')
         <h5>Device Info</h5>

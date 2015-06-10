@@ -25,6 +25,8 @@ class DashboardController extends AdminController {
     }
 
 
+
+
     public function getIndex()
     {
 
@@ -66,7 +68,7 @@ class DashboardController extends AdminController {
 
         $this->title = 'Dashboard';
 
-        $this->table_view = 'tables.dual';
+        $this->table_view = 'dashboard.dashboard';
 
         return parent::getIndex();
 

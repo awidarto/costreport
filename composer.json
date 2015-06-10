@@ -22,6 +22,7 @@
         "dinesh/barcode": "4.0.*@dev",
         "creitive/laravel4-breadcrumbs": "dev-master",
         "barryvdh/laravel-debugbar":"~1.8",
+        "xethron/migrations-generator": "dev-master",
         "dayed/auth2": "dev-master"
 	},
 	"autoload": {

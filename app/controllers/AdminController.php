@@ -148,6 +148,8 @@ class AdminController extends Controller {
         $actor = (isset(Auth::user()->email))?Auth::user()->fullname.' - '.Auth::user()->email:'guest';
         Event::fire('log.a',array($controller_name, 'view list' ,$actor,'OK'));
 
+        $this->can_add = false;
+
         return $this->pageGenerator();
     }
 
@@ -1536,9 +1538,9 @@ class AdminController extends Controller {
         array_unshift($fields, array('sel',array('kind'=>false)));
 
         if($insorting[0] == 0){
-            $sort_col = 'lastUpdate';
+            $sort_col = $this->def_order_by;
 
-            $sort_dir = 'desc';
+            $sort_dir = $this->def_order_dir;
         }else{
             $sort_col = $fields[$insorting[0]][0];
 

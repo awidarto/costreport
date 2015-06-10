@@ -1,4 +1,4 @@
-@extends('layout.fixedtwo')
+@extends('layout.maketwo')
 
 @section('left')
         <h4>Role</h4>
