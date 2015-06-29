@@ -11,7 +11,7 @@
         <div class="col-xs-5 col-sm-5 col-md-5 col-lg-5">
             {{ Former::text('acc-period-from', '')
                     ->value(Input::get('acc-period-from',$dperiod))
-                    ->class('form-control input-sm b-datepicker')
+                    ->class('form-control input-sm p-datepicker')
                     ->id('acc-period-from');
             }}
 
@@ -19,7 +19,7 @@
         <div class="col-xs-5 col-sm-5 col-md-5 col-lg-5">
             {{ Former::text('acc-period-to', '')
                     ->value(Input::get('acc-period-to',$dperiod))
-                    ->class('form-control input-sm b-datepicker')
+                    ->class('form-control input-sm p-datepicker')
                     ->id('acc-period-to');
             }}
         </div>
@@ -78,6 +78,12 @@ button#label_default{
 
 <script type="text/javascript">
     $(document).ready(function(){
+
+        $('.p-datepicker').bootstrapDatepicker({
+            startView: 1,
+            minViewMode: 1,
+            format: 'yyyy0mm'
+        });
 
         $('#company-code').on('change',function(){
             oTable.draw();

@@ -218,7 +218,7 @@ class CoaController extends AdminController {
         $this->title = 'Chart of Accounts';
 
         $this->place_action = 'none';
-
+        $this->show_select = false;
         Breadcrumbs::addCrumb('Cost Report',URL::to( strtolower($this->controller_name) ));
 
         //$this->additional_filter = View::make(strtolower($this->controller_name).'.addfilter')->with('sync_url', strtolower($this->controller_name).'/synclegacy'  )->render();
@@ -253,6 +253,11 @@ class CoaController extends AdminController {
         $this->def_order_by = 'ACNT_CODE';
         $this->def_order_dir = 'ASC';
         $this->place_action = 'none';
+        $this->show_select = false;
+
+        $this->sql_key = 'TRANS_DATETIME';
+        $this->sql_table_name = 'j10_acnt';
+        $this->sql_connection = 'mysql2';
 
         return parent::postSQLIndex();
     }
@@ -521,17 +526,18 @@ class CoaController extends AdminController {
 
     public function makeActions($data)
     {
-        $delete = '<span class="del" id="'.$data['_id'].'" ><i class="fa fa-times-circle"></i> Delete</span>';
-        $edit = '<a href="'.URL::to('advertiser/edit/'.$data['_id']).'"><i class="fa fa-edit"></i> Update</a>';
-        $dl = '<a href="'.URL::to('brochure/dl/'.$data['_id']).'" target="new"><i class="fa fa-download"></i> Download</a>';
-        $print = '<a href="'.URL::to('brochure/print/'.$data['_id']).'" target="new"><i class="fa fa-print"></i> Print</a>';
-        $upload = '<span class="upload" id="'.$data['_id'].'" rel="'.$data['SKU'].'" ><i class="fa fa-upload"></i> Upload Picture</span>';
-        $inv = '<span class="upinv" id="'.$data['_id'].'" rel="'.$data['SKU'].'" ><i class="fa fa-upload"></i> Update Inventory</span>';
-        $stat = '<a href="'.URL::to('stats/merchant/'.$data['id']).'"><i class="fa fa-line-chart"></i> Stats</a>';
+        /*
+        $delete = '<span class="del" id="'.$data['ACNT_CODE'].'" ><i class="fa fa-times-circle"></i> Delete</span>';
+        $edit = '<a href="'.URL::to('advertiser/edit/'.$data['ACNT_CODE']).'"><i class="fa fa-edit"></i> Update</a>';
+        $dl = '<a href="'.URL::to('brochure/dl/'.$data['ACNT_CODE']).'" target="new"><i class="fa fa-download"></i> Download</a>';
+        $print = '<a href="'.URL::to('brochure/print/'.$data['ACNT_CODE']).'" target="new"><i class="fa fa-print"></i> Print</a>';
+        $upload = '<span class="upload" id="'.$data['ACNT_CODE'].'" rel="'.$data['SKU'].'" ><i class="fa fa-upload"></i> Upload Picture</span>';
+        $inv = '<span class="upinv" id="'.$data['ACNT_CODE'].'" rel="'.$data['SKU'].'" ><i class="fa fa-upload"></i> Update Inventory</span>';
 
-        $history = '<a href="'.URL::to('advertiser/history/'.$data['_id']).'"><i class="fa fa-clock-o"></i> History</a>';
+        $history = '<a href="'.URL::to('advertiser/history/'.$data['ACNT_CODE']).'"><i class="fa fa-clock-o"></i> History</a>';
 
         $actions = $stat.'<br />'.$edit.'<br />'.$delete;
+        */
         $actions = '';
         return $actions;
     }

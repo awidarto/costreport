@@ -429,12 +429,12 @@ select.input-sm {
 
 
 
-		eldatetime = $('.datetimepickersearch').datetimepicker({
+		eldatetime = $('.datetimepickersearch').datepicker({
 			minView:2,
 			maxView:2
 		});
 
-		eldate = $('.dateinput').datetimepicker({
+		eldate = $('.dateinput').datepicker({
 			minView:2,
 			maxView:2
 		});

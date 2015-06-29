@@ -297,6 +297,8 @@
     <script src="{{ URL::to('makeadmin')}}/assets/admin/md-layout4/material-design/js/material.js"></script>
     <script src="{{ URL::to('makeadmin')}}/assets/admin/layout4/js/layout.js"></script>
 
+    <script src="{{ URL::to('makeadmin')}}/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.js"></script> <!-- >Bootstrap Date Picker -->
+
     <!-- Main Application Script -->
     @include('layout.modaljs')
     @include('layout.js')

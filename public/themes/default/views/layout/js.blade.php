@@ -12,7 +12,7 @@
 
     {{ HTML::script('js/moment.min.js') }}
 
-    {{ HTML::script('js/smalot/bootstrap-datetimepicker.min.js') }}
+    {{-- HTML::script('js/smalot/bootstrap-datetimepicker.min.js') --}}
     {{-- HTML::script('js/sm-datepicker/bootstrap-datetimepicker.min.js') --}}
 
     {{ HTML::script('js/daterangepicker.js') }}

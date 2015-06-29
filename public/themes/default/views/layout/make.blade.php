@@ -19,6 +19,8 @@
     <link href="{{ URL::to('makeadmin') }}/assets/admin/md-layout4/material-design/css/material.css" rel="stylesheet">
     <link href="{{ URL::to('makeadmin') }}/assets/admin/md-layout4/css/layout.css" rel="stylesheet">
 
+    <link href="{{ URL::to('makeadmin') }}/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">
+
 
     <script src="{{ URL::to('makeadmin') }}/assets/global/plugins/modernizr/modernizr-2.6.2-respond-1.1.0.min.js"></script>
 
@@ -285,6 +287,12 @@
     {{--
     <script src="{{ URL::to('makeadmin')}}/assets/admin/layout4/js/layout.js"></script> <!-- Main Application Script -->
     --}}
+
+    <!-- BEGIN PAGE SCRIPT -->
+    <script src="{{ URL::to('makeadmin')}}/assets/global/plugins/touchspin/jquery.bootstrap-touchspin.min.js"></script> <!-- A mobile and touch friendly input spinner component for Bootstrap -->
+    <script src="{{ URL::to('makeadmin')}}/assets/global/plugins/timepicker/jquery-ui-timepicker-addon.min.js"></script> <!-- Time Picker -->
+    <script src="{{ URL::to('makeadmin')}}/assets/global/plugins/multidatepicker/multidatespicker.min.js"></script> <!-- Multi dates Picker -->
+    <script src="{{ URL::to('makeadmin')}}/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.js"></script> <!-- >Bootstrap Date Picker -->
 
     <script src="{{ URL::to('makeadmin')}}/assets/admin/md-layout4/material-design/js/material.js"></script>
     <script src="{{ URL::to('makeadmin')}}/assets/admin/layout4/js/layout.js"></script>
