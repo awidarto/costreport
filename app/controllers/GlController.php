@@ -297,10 +297,10 @@ class GlController extends AdminController {
         }else{
             $model = $model->select('j10_a_salfldg.*','j10_acnt.DESCR as ACC_DESCR')
                 ->leftJoin('j10_acnt', 'j10_a_salfldg.ACCNT_CODE', '=', 'j10_acnt.ACNT_CODE' )
-                ->where('PERIOD','<=', Input::get('acc-period-from') )
-                ->where('PERIOD','>=', Input::get('acc-period-to') )
+                ->where('PERIOD','>=', Input::get('acc-period-from') )
+                ->where('PERIOD','<=', Input::get('acc-period-to') )
                 ->where('ACCNT_CODE','>=', Input::get('acc-code-from') )
-                ->where('ACCNT_CODE','>=', Input::get('acc-code-to') );
+                ->where('ACCNT_CODE','<=', Input::get('acc-code-to') );
         }
 
 
