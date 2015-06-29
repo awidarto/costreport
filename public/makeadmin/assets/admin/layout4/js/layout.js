@@ -228,6 +228,8 @@ function resetStyle() {
         $.removeCookie('submenu-hover');
         $.removeCookie('sidebar-collapsed');
         $.removeCookie('boxed-layout');
+        $.removeCookie('sidebar-hover');
+        $.removeCookie('sidebar-hover', { path: '/'});
         $.removeCookie('main-color', { path: '/'});
         $.removeCookie('main-name', { path: '/'});
         $.removeCookie('theme', { path: '/'});

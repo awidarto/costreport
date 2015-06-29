@@ -4,7 +4,7 @@
 @section('left')
         {{ Former::hidden('id')->value($formdata['_id']) }}
 
-        <h3>Employee Info</h3>
+        <h4>Employee Info</h4>
         {{ Former::text('employeeId','Employee ID') }}
 
         {{ Former::select('department')->options(Config::get('kickstart.salutation'))->label('Salutation') }}
@@ -17,28 +17,28 @@
         {{ Former::text('allocControl','Alloc. Control') }}
 
 
-        <h3>User Info</h3>
+        <h4>User Info</h4>
 
         {{ Former::select('salutation')->options(Config::get('kickstart.salutation'))->label('Salutation') }}
         {{ Former::text('firstname','First Name') }}
         {{ Former::text('lastname','Last Name') }}
         {{ Former::text('mobile','Mobile') }}
 
-        {{ Former::text('address_1','Address') }}
-        {{ Former::text('address_2',' ') }}
+        {{ Former::text('address_1','Address line 1') }}
+        {{ Former::text('address_2','Address line 2') }}
         {{ Former::text('city','City') }}
 
         {{ Former::text('state','State / Province') }}
 
         {{ Former::select('countryOfOrigin')->id('country')->options(Config::get('country.countries'))->label('Country of Origin') }}
 
-        {{ Form::submit('Save',array('class'=>'btn btn-primary'))}}&nbsp;&nbsp;
+        {{ Former::submit('Save',array('class'=>'btn btn-primary'))}}&nbsp;&nbsp;
         {{ HTML::link($back,'Cancel',array('class'=>'btn'))}}
 
 @stop
 
 @section('right')
-        <h3>Login Info</h3>
+        <h4>Login Info</h4>
 
         {{ Former::text('email','Email') }}
 

@@ -11,6 +11,33 @@ if($('body').hasClass('rtl'))  is_RTL = true;
 /* PLUGINS                                                   */
 /* ========================================================= */
 
+(function($) {
+    $.fn.autogrow = function() {
+        return this.each(function() {
+            var textarea = this;
+            $.fn.autogrow.resize(textarea);
+            $(textarea).focus(function() {
+                textarea.interval = setInterval(function() {
+                    $.fn.autogrow.resize(textarea);
+                }, 500);
+            }).blur(function() {
+                clearInterval(textarea.interval);
+            });
+        });
+    };
+    $.fn.autogrow.resize = function(textarea) {
+        var lineHeight = parseInt($(textarea).css('line-height'), 10);
+        var lines = textarea.value.split('\n');
+        var columns = textarea.cols;
+        var lineCount = 0;
+        $.each(lines, function() {
+            lineCount += Math.ceil(this.length / columns) || 1;
+        });
+        var height = lineHeight * (lineCount + 1);
+        $(textarea).css('height', height);
+    };
+})(jQuery);
+
 /**** Color Picker ****/
 function colorPicker(){
     if ($('.color-picker').length && $.fn.spectrum) {
@@ -72,7 +99,7 @@ function sortablePortlets(){
 var oldIndex;
 if ($('.sortable').length && $.fn.sortable) {
     $(".sortable").sortable({
-        handle: ".panel-header",
+        handle: ".panel-header, .card-title",
         start: function(event, ui) {
             oldIndex = ui.item.index();
             ui.placeholder.height(ui.item.height() - 20);
@@ -427,7 +454,7 @@ function tableDynamic(){
 function handleiCheck() {
 
     if (!$().iCheck)  return;
-    $(':checkbox:not(.js-switch, .switch-input, .switch-iphone, .onoffswitch-checkbox, .ios-checkbox), :radio').each(function() {
+    $(':checkbox:not(.js-switch, .switch-input, .switch-iphone, .onoffswitch-checkbox, .ios-checkbox, .md-checkbox), :radio:not(.md-radio)').each(function() {
 
         var checkboxClass = $(this).attr('data-checkbox') ? $(this).attr('data-checkbox') : 'icheckbox_minimal-grey';
         var radioClass = $(this).attr('data-radio') ? $(this).attr('data-radio') : 'iradio_minimal-grey';
@@ -903,6 +930,7 @@ $(document).ready(function () {
     barCharts();
     animateNumber();
     textareaAutosize();
+    $('.autogrow').autogrow();
 });
 
 

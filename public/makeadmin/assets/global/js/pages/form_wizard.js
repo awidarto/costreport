@@ -1,5 +1,11 @@
 $(document).ready(function() {
 
+    setTimeout(function () {
+        $(window).resize();
+        $(window).trigger('resize');
+    }, 500);
+
+
     $('#style .form-wizard-style').on('click', 'a', function(e){
         $('.form-wizard-style a').removeClass('current');
         $(this).addClass('current');

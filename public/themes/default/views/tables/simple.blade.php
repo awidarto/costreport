@@ -102,12 +102,12 @@ select.input-sm {
         <div class="col-md-6 command-bar">
 
             @if(isset($can_add) && $can_add == true)
-                <a href="{{ URL::to($addurl) }}" class="btn btn-transparent btn-primary"><i class="fa fa-plus"></i> Add</a>
-                <a href="{{ URL::to($importurl) }}" class="btn btn-transparent btn-primary"><i class="fa fa-upload"></i> Excel</a>
+                <a href="{{ URL::to($addurl) }}" class="btn btn-sm btn-transparent btn-primary"><i class="fa fa-plus"></i> Add</a>
+                <a href="{{ URL::to($importurl) }}" class="btn btn-sm btn-transparent btn-primary"><i class="fa fa-upload"></i> Excel</a>
             @endif
 
-            <a class="btn btn-info btn-transparent" id="download-xls"><i class="fa fa-download"></i> Excel</a>
-            <a class="btn btn-info btn-transparent" id="download-csv"><i class="fa fa-download"></i> CSV</a>
+            <a class="btn btn-sm btn-info btn-transparent" id="download-xls"><i class="fa fa-download"></i> Excel</a>
+            <a class="btn btn-sm btn-info btn-transparent" id="download-csv"><i class="fa fa-download"></i> CSV</a>
 
             @if(isset($is_report) && $is_report == true)
                 {{ $report_action }}
@@ -175,7 +175,7 @@ select.input-sm {
 
             <thead id="searchinput">
                 <tr>
-                <?php $index = -1 ;?>
+                <?php $index = $start_index ;?>
                 @foreach($heads as $in)
                     @if( $in[0] != 'select_all' && $in[0] != '')
                         @if(isset($in[1]['search']) && $in[1]['search'] == true)
@@ -217,7 +217,7 @@ select.input-sm {
                                     <input id="{{ $index }}" type="text" name="search_{{$in[0]}}" id="search_{{$in[0]}}" placeholder="{{$in[0]}}" value="" style="display:none;" class="search_init form-control input-sm {{ (isset($in[1]['class']))?$in[1]['class']:'filter'}}" />
                                     <div class="styled-select">
                                         <?php $select_class = (isset($in[1]['class']))?$in[1]['class']:'filter' ?>
-                                        {{ Form::select('select_'.$in[0],$in[1]['select'],null,array('class'=>'selector form-control input-sm select-'.$select_class,'id'=>$index ))}}
+                                        {{ Form::select('select_'.$in[0],$in[1]['select'],null,array('class'=>'selector form-control form-white input-sm select-'.$select_class,'id'=>$index ))}}
                                     </div>
                                 </td>
                             @else

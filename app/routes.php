@@ -446,10 +446,11 @@ Route::post('login',function(){
 
         // find the user
         $user = User::where($userfield, '=', Input::get('email'))->first();
-
+        /*
         $member = Member::where('email', '=', Input::get('email'))
                         ->whereOr('fullname','=', Input::get('email'))
                         ->first();
+        */
         // check if user exists
         if ($user) {
             // check if password is correct
@@ -470,7 +471,8 @@ Route::post('login',function(){
                     ->withErrors($validator)
                     ->withInput(Input::except('password'));
             }
-        } else if($member){
+        }
+        /* else if($member){
 
             //print_r($member);
 
@@ -495,7 +497,8 @@ Route::post('login',function(){
                     ->withInput(Input::except('password'));
             }
 
-        } else {
+        } */
+        else {
             // user does not exist in database
             // return them to login with message
             Session::flash('loginError', 'This user does not exist.');

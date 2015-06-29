@@ -30,7 +30,7 @@ $(function() {
                 $('.form-signin').slideDown(300);
             });
         });
-        $('#submit-form').click(function(e) {
+        $('#submit-form, #submit-password').click(function(e) {
             e.preventDefault();
             var l = Ladda.create(this);
             l.start();
@@ -39,17 +39,6 @@ $(function() {
                 //window.location.href = "dashboard.html";
             }, 2000);
         });
-
-        $('#submit-password').click(function(e) {
-            e.preventDefault();
-            var l = Ladda.create(this);
-            l.start();
-            setTimeout(function() {
-                $('#form-password').submit();
-                //window.location.href = "dashboard.html";
-            }, 2000);
-        });
-
         $.backstretch(["../assets/global/images/gallery/login.jpg"],
         {
             fade: 600,

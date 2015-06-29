@@ -12,7 +12,14 @@
     <link href="{{ URL::to('makeadmin') }}/assets/global/css/style.css" rel="stylesheet">
     <link href="{{ URL::to('makeadmin') }}/assets/global/css/theme.css" rel="stylesheet">
     <link href="{{ URL::to('makeadmin') }}/assets/global/css/ui.css" rel="stylesheet">
+    {{--
     <link href="{{ URL::to('makeadmin') }}/assets/admin/layout4/css/layout.css" rel="stylesheet">
+    --}}
+
+    <link href="{{ URL::to('makeadmin') }}/assets/admin/md-layout4/material-design/css/material.css" rel="stylesheet">
+    <link href="{{ URL::to('makeadmin') }}/assets/admin/md-layout4/css/layout.css" rel="stylesheet">
+
+
     <script src="{{ URL::to('makeadmin') }}/assets/global/plugins/modernizr/modernizr-2.6.2-respond-1.1.0.min.js"></script>
 
     <script src="{{ URL::to('makeadmin')}}/assets/global/plugins/jquery/jquery-1.11.1.min.js"></script>
@@ -22,6 +29,45 @@
     <script type="text/javascript">
       var base = '{{ URL::to('/') }}/';
     </script>
+
+    <style type="text/css">
+
+      label{
+        margin-top: 12px !important;
+
+      }
+
+      input.form-control{
+        height:30px !important;
+      }
+
+      a.btn, input.btn{
+        margin-top: 15px;
+      }
+
+      .select2-container .select2-choice{
+        background-color: transparent !important;
+      }
+
+      .select2-selection {
+          border-radius: 0px !important;
+          border-top-width: 0px !important;
+          border-left-width: 0px !important;
+          border-right-width: 0px !important;
+      }
+
+      .select2-container--default .select2-selection:focus{
+          border-bottom-width: 2px;
+          outline: none !important;
+          border-color: #0054a0;
+      }
+
+      .select2-selection__rendered{
+          font-size: initial !important;
+          color: #666666 !important;
+          padding-left: 0px !important;
+      }
+    </style>
 
   </head>
   <!-- LAYOUT: Apply "submenu-hover" class to body element to have sidebar submenu show on mouse hover -->
@@ -236,7 +282,13 @@
     <script src="{{ URL::to('makeadmin')}}/assets/global/js/pages/search.js"></script> <!-- Search Script -->
     <script src="{{ URL::to('makeadmin')}}/assets/global/js/plugins.js"></script> <!-- Main Plugin Initialization Script -->
     <script src="{{ URL::to('makeadmin')}}/assets/global/js/application.js"></script> <!-- Main Application Script -->
+    {{--
     <script src="{{ URL::to('makeadmin')}}/assets/admin/layout4/js/layout.js"></script> <!-- Main Application Script -->
+    --}}
+
+    <script src="{{ URL::to('makeadmin')}}/assets/admin/md-layout4/material-design/js/material.js"></script>
+    <script src="{{ URL::to('makeadmin')}}/assets/admin/layout4/js/layout.js"></script>
+
     @include('layout.modaljs')
     @include('layout.js')
 

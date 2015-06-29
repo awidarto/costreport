@@ -101,6 +101,12 @@ class AdminController extends Controller {
     public $additional_table_param = array();
     //public $product_info_url = 'ajax/productinfo';
 
+    public $sql_connection = '';
+
+    public $sql_table_name = '';
+
+    public $sql_key = 'id';
+
     public $product_info_url = null;
 
     public $prefix = null;
@@ -148,13 +154,14 @@ class AdminController extends Controller {
         $actor = (isset(Auth::user()->email))?Auth::user()->fullname.' - '.Auth::user()->email:'guest';
         Event::fire('log.a',array($controller_name, 'view list' ,$actor,'OK'));
 
-        $this->can_add = false;
+        //$this->can_add = false;
 
         return $this->pageGenerator();
     }
 
     public function postIndex()
     {
+
         return $this->tableResponder();
     }
 
@@ -189,11 +196,14 @@ class AdminController extends Controller {
 		$select_all = Former::checkbox()->name('All')->check(false)->id('select_all');
 
 		// add selector and sequence columns
+        $start_index = -1;
         if($this->place_action == 'both' || $this->place_action == 'first'){
             array_unshift($heads, array('Actions',array('sort'=>false,'clear'=>true,'class'=>'action')));
         }
         if($this->show_select == true){
             array_unshift($heads, array($select_all,array('sort'=>false)));
+        }else{
+            $start_index = $start_index + 1;
         }
 		array_unshift($heads, array('#',array('sort'=>false)));
 
@@ -250,6 +260,7 @@ class AdminController extends Controller {
             ->with('product_info_url',$this->product_info_url)
             ->with('prefix',$this->prefix)
 			->with('heads',$heads )
+            ->with('start_index',$start_index)
 			->with('row',$this->rowdetail );
 
 
@@ -636,6 +647,7 @@ class AdminController extends Controller {
 
     public function SQLtableResponder()
     {
+        set_time_limit(0);
 
         $fields = $this->fields;
 
@@ -646,6 +658,11 @@ class AdminController extends Controller {
 
         //array_unshift($fields, array('select',array('kind'=>false)));
         array_unshift($fields, array('seq',array('kind'=>false)));
+
+        if($this->show_select == true){
+            array_unshift($fields, array('select',array('kind'=>false)));
+        }
+
         if($this->place_action == 'both' || $this->place_action == 'first'){
             array_unshift($fields, array('action',array('kind'=>false)));
         }
@@ -664,8 +681,16 @@ class AdminController extends Controller {
         $hilite = array();
         $hilite_replace = array();
 
-        $model = $this->model;
 
+        //$model = $this->model;
+
+        //$table = $emodel->getTable();
+
+        $model = DB::connection($this->sql_connection)->table($this->sql_table_name);
+
+        $model = $this->SQL_additional_query($model);
+
+        //$model = $this->SQL_make_join($model);
 
         for($i = 0;$i < count($fields);$i++){
             $idx = $i;
@@ -675,9 +700,15 @@ class AdminController extends Controller {
             $field = $fields[$i][0];
             $type = $fields[$i][1]['kind'];
 
+
             $qval = '';
 
-
+            $sfields = explode('.',$field);
+            $sub = '';
+            if(count($sfields) > 1){
+                $sub = $sfields[0];
+                $subfield = $sfields[1];
+            }
 
             if(Input::get('sSearch_'.$i))
             {
@@ -687,6 +718,15 @@ class AdminController extends Controller {
                         if($pos == 'both'){
                             //$model->whereRegex($field,'/'.Input::get('sSearch_'.$idx).'/i');
                             $model = $model->where($field,'like','%'.Input::get('sSearch_'.$idx).'%');
+                            /*
+                            if($sub == ''){
+                                $model = $model->where($field,'like','%'.Input::get('sSearch_'.$idx).'%');
+                            }else{
+                                $model = $model->whereHas($sub, function($q) use ($subfield, $idx) {
+                                    $q->where($subfield,'like','%'.Input::get('sSearch_'.$idx).'%');
+                                });
+                            }
+                            */
 
                             $qval = new MongoRegex('/'.Input::get('sSearch_'.$idx).'/i');
                         }else if($pos == 'before'){
@@ -790,13 +830,17 @@ class AdminController extends Controller {
                 }elseif($type == 'daterange'){
                     $datestring = Input::get('sSearch_'.$idx);
 
+                    //print $datestring;
+
                     if($datestring != ''){
                         $dates = explode(' - ', $datestring);
 
                         if(count($dates) == 2){
+
                             $daystart = date('Y-m-d',strtotime($dates[0])).' 00:00:00';
                             $dayend = date('Y-m-d',strtotime($dates[1])).' 23:59:59';
 
+                            //print $daystart;
                             //$qval = array($field =>array('$gte'=>$daystart,'$lte'=>$dayend));
 
                             $qval = array('$gte'=>$daystart,'$lte'=>$dayend);
@@ -842,8 +886,6 @@ class AdminController extends Controller {
 
         }
 
-        $model = $this->SQL_additional_query($model);
-
         /* first column is always sequence number, so must be omitted */
 
         $fidx = Input::get('iSortCol_0') - 1;
@@ -875,8 +917,14 @@ class AdminController extends Controller {
         //$model->where('docFormat','picture');
 
         $count_all = $model->count();
-        $count_display_all = $model->count();
+        //$count_display_all = $model->count();
+        $count_display_all = $count_all;
 
+        $results = $model->skip( $pagestart )->take( $pagelength )->orderBy($sort_col, $sort_dir )->get();
+
+        //$model = $this->SQL_make_join($model);
+
+        /*
         if(is_array($q) && count($q) > 0){
 
             $count_display_all = $model->count();
@@ -897,7 +945,7 @@ class AdminController extends Controller {
             //$last_query = DB::getQueryLog();
 
 
-        }
+        }*/
 
         //print_r($model);
 
@@ -905,7 +953,8 @@ class AdminController extends Controller {
 
         //$queries = DB::getQueryLog();
         $last_query = $model;
-        //print_r($results->toArray());
+
+        //print_r($results);
 
 
         $aadata = array();
@@ -914,7 +963,12 @@ class AdminController extends Controller {
 
         $counter = 1 + $pagestart;
 
+
         foreach ($results as $doc) {
+
+            $doc = (array) $doc;
+
+            //print_r($doc);
 
             $extra = $doc;
 
@@ -929,7 +983,7 @@ class AdminController extends Controller {
 
             if($this->show_select == true){
                 //$sel = Former::checkbox('sel_'.$doc['_id'])->check(false)->label(false)->id($doc['_id'])->class('selector')->__toString();
-                $sel = '<input type="checkbox" name="sel_'.$doc['_id'].'" id="'.$doc['_id'].'" value="'.$doc['_id'].'" class="selector" />';
+                $sel = '<input type="checkbox" name="sel_'.$doc[$this->sql_key].'" id="'.$doc[$this->sql_key].'" value="'.$doc[$this->sql_key].'" class="selector" />';
                 $row[] = $sel;
             }
 
@@ -939,8 +993,11 @@ class AdminController extends Controller {
 
 
             foreach($fields as $field){
-                if($field[1]['kind'] != false && $field[1]['show'] == true){
 
+                //$join = (isset($fields[$i][1]['join']))?$fields[$i][1]['join']:false;
+
+                if($field[1]['kind'] != false && $field[1]['show'] == true){
+                    /*
                     $fieldarray = explode('.',$field[0]);
                     if(is_array($fieldarray) && count($fieldarray) > 1){
                         $fieldarray = implode('\'][\'',$fieldarray);
@@ -949,6 +1006,9 @@ class AdminController extends Controller {
                     }else{
                         $label = (isset($doc[$field[0]]))?true:false;
                     }
+                    */
+
+                    $label = (isset($doc[$field[0]]) || isset($field[1]['alias']) )?true:false;
 
 
                     if($label){
@@ -956,6 +1016,8 @@ class AdminController extends Controller {
                         if( isset($field[1]['callback']) && $field[1]['callback'] != ''){
                             $callback = $field[1]['callback'];
                             $row[] = $this->$callback($doc, $field[0]);
+                        }elseif( isset($field[1]['alias']) && $field[1]['alias'] != ''){
+                            $row[] = $doc[$field[1]['alias']];
                         }else{
                             if($field[1]['kind'] == 'datetime' || $field[1]['kind'] == 'datetimerange'){
                                 if($doc[$field[0]] instanceof MongoDate){
@@ -1311,6 +1373,10 @@ class AdminController extends Controller {
         }
     }
 
+    public function SQL_make_join($model){
+        return $model;
+    }
+
     public function SQL_additional_query($model){
         return $model;
     }
@@ -1504,16 +1570,6 @@ class AdminController extends Controller {
 
                     $q[$field] = $qval;
 
-                }elseif($type == '__datetime'){
-                    $datestring = $infilters[$i];
-
-                    print $datestring;
-
-                    $qval = new MongoDate(strtotime($datestring));
-
-                    //$this->model->where($field,$qval);
-                    $q[$field] = $qval;
-
                 }
 
 
@@ -1579,7 +1635,7 @@ class AdminController extends Controller {
             //$row[] = $counter;
 
             foreach($fields as $field){
-                if($field[1]['kind'] != false && $field[1]['show'] == true){
+                if($field[1]['kind'] != false && ( isset($field[1]['show']) && $field[1]['show'] == true ) ){
 
                     $fieldarray = explode('.',$field[0]);
                     if(is_array($fieldarray) && count($fieldarray) > 1){

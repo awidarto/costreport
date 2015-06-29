@@ -40,6 +40,8 @@ class UserController extends AdminController {
 
         $this->title = 'Users';
 
+        $this->can_add = true;
+
         $this->place_action = 'first';
 
         Breadcrumbs::addCrumb('System',URL::to( strtolower($this->controller_name) ));

@@ -145,6 +145,65 @@ class Prefs {
         return self::$role;
     }
 
+//company
+    public static function getCompany(){
+        $c = Company::get();
+
+        self::$role = $c;
+        return new self;
+    }
+
+    public function CompanyToSelection($value, $label, $all = true)
+    {
+        if($all){
+            $ret = array(''=>'Select Company');
+        }else{
+            $ret = array();
+        }
+
+        foreach (self::$role as $c) {
+            $ret[$c->{$value}] = $c->{$label};
+        }
+
+
+        return $ret;
+    }
+
+    public function CompanyToArray()
+    {
+        return self::$role;
+    }
+
+//company
+    public static function getCoa(){
+        $c = Coa::get();
+
+        self::$role = $c;
+        return new self;
+    }
+
+    public function CoaToSelection($value, $label, $all = true)
+    {
+        if($all){
+            $ret = array(''=>'Select Coa');
+        }else{
+            $ret = array();
+        }
+
+        foreach (self::$role as $c) {
+            $ret[$c->{$value}] = $c->{$label};
+        }
+
+
+        return $ret;
+    }
+
+    public function CoaToArray()
+    {
+        return self::$role;
+    }
+
+
     public static function yearSelection(){
         $ya = array();
         for( $i = 1970; $i < 2050; $i++ ){

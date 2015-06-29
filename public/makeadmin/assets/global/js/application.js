@@ -89,6 +89,10 @@ function handlePanelAction() {
             var controls_html = '<div class="control-btn">' + '<a href="#" class="panel-reload hidden"><i class="icon-reload"></i></a>' + '<a class="hidden" id="dropdownMenu1" data-toggle="dropdown">' + '<i class="icon-settings"></i>' + '</a>' + '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu1">' + '<li><a href="#">Action</a>' + '</li>' + '<li><a href="#">Another action</a>' + '</li>' + '<li><a href="#">Something else here</a>' + '</li>' + '</ul>' + '<a href="#" class="panel-popout hidden tt" title="Pop Out/In"><i class="icons-office-58"></i></a>' + '<a href="#" class="panel-maximize hidden"><i class="icon-size-fullscreen"></i></a>' + '<a href="#" class="panel-toggle"><i class="fa fa-angle-down"></i></a>' + '<a href="#" class="panel-close"><i class="icon-trash"></i></a>' + '</div>';
             $(this).append(controls_html);
         });
+        $('.md-panel-controls').each(function() {
+            var controls_html = '<div class="control-btn">' + '<a href="#" class="panel-reload hidden"><i class="mdi-av-replay"></i></a>' + '<a class="hidden" id="dropdownMenu1" data-toggle="dropdown">' + '<i class="mdi-action-settings"></i>' + '</a>' + '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu1">' + '<li><a href="#">Action</a>' + '</li>' + '<li><a href="#">Another action</a>' + '</li>' + '<li><a href="#">Something else here</a>' + '</li>' + '</ul>' + '<a href="#" class="panel-popout hidden tt" title="Pop Out/In"><i class="mdi-action-open-in-browser"></i></a>' + '<a href="#" class="panel-maximize hidden"><i class="mdi-action-launch"></i></a>' + '<a href="#" class="panel-toggle"><i class="mdi-navigation-expand-more"></i></a>' + '<a href="#" class="panel-close"><i class="mdi-action-delete"></i></a>' + '</div>';
+            $(this).append(controls_html);
+        });
     }
     handlePanelControls();
     // Remove Panel 
@@ -377,27 +381,41 @@ function destroySideScroll() {
 
 /* Toggle submenu open */
 function toggleSidebarMenu() {
-    // Check if sidebar is collapsed
-    if ($('body').hasClass('sidebar-collapsed') || $('body').hasClass('sidebar-top') || $('body').hasClass('submenu-hover')) $('.nav-sidebar .children').css({
+// Check if sidebar is collapsed
+if ($('body').hasClass('sidebar-collapsed') || $('body').hasClass('sidebar-top') || $('body').hasClass('submenu-hover'))
+    $('.nav-sidebar .children').css({
         display: ''
     });
-    else $('.nav-active.active .children').css('display', 'block');
-    $('.sidebar').on('click', '.nav-sidebar li.nav-parent > a', function(e) {
-        e.preventDefault();
-        if ($('body').hasClass('sidebar-collapsed') && !$('body').hasClass('sidebar-hover')) return;
-        if ($('body').hasClass('submenu-hover')) return;
-        var parent = $(this).parent().parent();
-        var sub = $(this).next();
-        parent.children('li.active').children('.children').slideUp(200);
-        if(!$(this).parent().hasClass('active')){
-            sub.slideDown(200, function() {
-                $(this).parent().addClass("active");
-            });
-        }
-        $('.nav-sidebar .arrow').removeClass('active');
-        parent.children('li.active').removeClass('active');
+else $('.nav-active.active .children').css('display', 'block');
+$('.sidebar').on('click', '.nav-sidebar li.nav-parent > a', function (e) {
+    e.preventDefault();
+    if ($('body').hasClass('sidebar-collapsed') && !$('body').hasClass('sidebar-hover')) return;
+    if ($('body').hasClass('submenu-hover')) return;
+    var parent = $(this).parent().parent();
+    parent.children('li.active').children('.children').slideUp(200);
+    $('.nav-sidebar .arrow').removeClass('active');
+    parent.children('li.active').removeClass('active');
+    var sub = $(this).next();
+    if (sub.is(":visible")) {
+        sub.children().addClass('hidden-item')
+        $(this).parent().removeClass("active");
+        sub.slideUp(200, function () {
+            sub.children().removeClass('hidden-item')
+        });
+    } else {
         $(this).find('.arrow').addClass('active');
-    });
+        sub.children().addClass('is-hidden');
+        setTimeout(function () {
+            sub.children().addClass('is-shown');
+        }, 0);
+        sub.slideDown(200, function () {
+            $(this).parent().addClass("active");
+            setTimeout(function () {
+                sub.children().removeClass('is-hidden').removeClass('is-shown');
+            }, 500);
+        });
+    }
+});
 }
 
 /**** Handle Sidebar Widgets ****/

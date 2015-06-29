@@ -206,7 +206,7 @@ class GlController extends AdminController {
 
 
         $this->heads = array(
-            array('Period',array('search'=>true,'sort'=>true,'datetimerange'=>true)),
+            array('Period',array('search'=>true,'sort'=>true,'daterange'=>true)),
             array('Date',array('search'=>true,'sort'=>true,'daterange'=>true)),
             array('JV Ref',array('search'=>true,'sort'=>true)),
             array('Account',array('search'=>true,'sort'=>true)),
@@ -222,13 +222,15 @@ class GlController extends AdminController {
 
         $this->title = 'General Ledger';
 
-        $this->place_action = 'first';
+        $this->place_action = 'none';
+
+        $this->show_select = false;
 
         Breadcrumbs::addCrumb('Cost Report',URL::to( strtolower($this->controller_name) ));
 
-        //$this->additional_filter = View::make(strtolower($this->controller_name).'.addfilter')->with('sync_url', strtolower($this->controller_name).'/synclegacy'  )->render();
+        $this->additional_filter = View::make(strtolower($this->controller_name).'.addfilter')->render();
 
-        //$this->js_additional_param = "aoData.push( { 'name':'categoryFilter', 'value': $('#assigned-product-filter').val() } );";
+        $this->js_additional_param = "aoData.push( { 'name':'acc-period-to', 'value': $('#acc-period-to').val() }, { 'name':'acc-period-from', 'value': $('#acc-period-from').val() }, { 'name':'acc-code-from', 'value': $('#acc-code-from').val() }, { 'name':'acc-code-to', 'value': $('#acc-code-to').val() } );";
 
         $this->product_info_url = strtolower($this->controller_name).'/info';
 
@@ -242,13 +244,13 @@ class GlController extends AdminController {
         $this->fields = array(
             array('PERIOD',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
             array('TRANS_DATETIME',array('kind'=>'daterange', 'query'=>'like','pos'=>'both','show'=>true)),
-            array('TREFERENCE',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
-            array('ACCNT_CODE',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
-            array('DESCRIPTN',array('kind'=>'text','query'=>'like','pos'=>'both','attr'=>array('class'=>'expander'),'show'=>true)),
-            array('TREFERENCE',array('kind'=>'text','query'=>'like','pos'=>'both','attr'=>array('class'=>'expander'),'show'=>true)),
+            array('VCHR_NUM',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
+            array('ACCNT_CODE',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
+            array('j10_acnt.DESCR',array('kind'=>'text', 'alias'=>'ACC_DESCR' , 'query'=>'like', 'pos'=>'both','show'=>true)),
+            array('TREFERENCE',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
             array('CONV_CODE',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
             array('AMOUNT',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
-            array('AMOUNT',array('kind'=>'text','query'=>'like','pos'=>'both','attr'=>array('class'=>'expander'),'show'=>true)),
+            array('AMOUNT',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
             array('DESCRIPTN',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true))
         );
 
@@ -261,13 +263,49 @@ class GlController extends AdminController {
 
         $this->def_order_by = 'TRANS_DATETIME';
         $this->def_order_dir = 'DESC';
-        $this->place_action = 'first';
+        $this->place_action = 'none';
+        $this->show_select = false;
 
-        return parent::postSQLIndex();
+        $this->sql_key = 'TRANS_DATETIME';
+        $this->sql_table_name = 'j10_a_salfldg';
+        $this->sql_connection = 'mysql2';
+
+        return parent::SQLtableResponder();
+    }
+
+    public function SQL_make_join($model)
+    {
+        //$model->with('coa');
+
+        //PERIOD',TRANS_DATETIME,VCHR_NUM,ACC_DESCR,DESCRIPTN',TREFERENCE',CONV_CODE,AMOUNT',AMOUNT',DESCRIPTN'
+
+        $model = $model->select('j10_a_salfldg.*','j10_acnt.DESCR as ACC_DESCR')
+            ->leftJoin('j10_acnt', 'j10_a_salfldg.ACCNT_CODE', '=', 'j10_acnt.ACNT_CODE' );
+        return $model;
     }
 
     public function SQL_additional_query($model)
     {
+        $in = Input::get();
+
+        $period_from = Input::get('acc-period-from');
+        $period_to = Input::get('acc-period-to');
+
+        if($period_from == ''){
+            $model = $model->select('j10_a_salfldg.*','j10_acnt.DESCR as ACC_DESCR')
+                ->leftJoin('j10_acnt', 'j10_a_salfldg.ACCNT_CODE', '=', 'j10_acnt.ACNT_CODE' );
+        }else{
+            $model = $model->select('j10_a_salfldg.*','j10_acnt.DESCR as ACC_DESCR')
+                ->leftJoin('j10_acnt', 'j10_a_salfldg.ACCNT_CODE', '=', 'j10_acnt.ACNT_CODE' )
+                ->where('PERIOD','<=', Input::get('acc-period-from') )
+                ->where('PERIOD','>=', Input::get('acc-period-to') )
+                ->where('ACCNT_CODE','>=', Input::get('acc-code-from') )
+                ->where('ACCNT_CODE','>=', Input::get('acc-code-to') );
+        }
+
+
+        //print_r($in);
+
 
         //$model = $model->where('group_id', '=', 4);
 
@@ -448,16 +486,20 @@ class GlController extends AdminController {
         $this->heads = null;
 
         $this->fields = array(
-            array('ACNT_CODE',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
-            array('DESCR',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
-            array('S_HEAD',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
-            array('LOOKUP',array('kind'=>'text','query'=>'like','pos'=>'both')),
-            array('LONG_DESCR',array('kind'=>'text','query'=>'like','pos'=>'both')),
-            array('LAST_CHANGE_DATETIME',array('kind'=>'datetimerange','query'=>'like','pos'=>'both','show'=>true))
+            array('PERIOD',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
+            array('TRANS_DATETIME',array('kind'=>'daterange', 'query'=>'like','pos'=>'both','show'=>true)),
+            array('TREFERENCE',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
+            array('ACCNT_CODE',array('kind'=>'text', 'callback'=>'accDesc' ,'query'=>'like','pos'=>'both','show'=>true)),
+            array('DESCRIPTN',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
+            array('TREFERENCE',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
+            array('CONV_CODE',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
+            array('AMOUNT',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
+            array('AMOUNT',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
+            array('DESCRIPTN',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true))
         );
 
-        $this->def_order_dir = 'ASC';
-        $this->def_order_by = 'ACNT_CODE';
+        $this->def_order_dir = 'DESC';
+        $this->def_order_by = 'TRANS_DATETIME';
 
         return parent::postDlxl();
     }
@@ -530,6 +572,15 @@ class GlController extends AdminController {
 
     public function makeActions($data)
     {
+        /*
+        if(!is_array($data)){
+            $d = array();
+            foreach( $data as $k->$v ){
+                $d[$k]=>$v;
+            }
+            $data = $d;
+        }
+
         $delete = '<span class="del" id="'.$data['_id'].'" ><i class="fa fa-times-circle"></i> Delete</span>';
         $edit = '<a href="'.URL::to('advertiser/edit/'.$data['_id']).'"><i class="fa fa-edit"></i> Update</a>';
         $dl = '<a href="'.URL::to('brochure/dl/'.$data['_id']).'" target="new"><i class="fa fa-download"></i> Download</a>';
@@ -541,8 +592,15 @@ class GlController extends AdminController {
         $history = '<a href="'.URL::to('advertiser/history/'.$data['_id']).'"><i class="fa fa-clock-o"></i> History</a>';
 
         $actions = $stat.'<br />'.$edit.'<br />'.$delete;
+        */
         $actions = '';
         return $actions;
+    }
+
+    public function accountDesc($data)
+    {
+
+        return $data['ACCNT_CODE'];
     }
 
     public function extractCategory()

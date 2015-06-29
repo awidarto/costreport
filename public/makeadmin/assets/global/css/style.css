@@ -7009,7 +7009,7 @@ body:not(.fixed-topbar) .main-content .page-content {
     display: table-cell;
     padding: 30px;
     text-align: left;
-    vertical-align: middle;
+    vertical-align: top;
     width: 43%;
   }
   .account2 .account-info .logo {
