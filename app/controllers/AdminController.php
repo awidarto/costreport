@@ -6,9 +6,9 @@ class AdminController extends Controller {
 
 	public $model;
 
-	public $heads;
+	public $heads = array();
 
-	public $fields;
+	public $fields = array();
 
 	public $collection;
 
@@ -293,6 +293,7 @@ class AdminController extends Controller {
             $start_index = $start_index + 1;
         }
 		array_unshift($heads, array('#',array('sort'=>false)));
+
         array_unshift($fields, array('',array('sort'=>false)));
 
 		// add action column
