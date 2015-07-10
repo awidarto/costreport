@@ -243,12 +243,6 @@ class CoaController extends AdminController {
             array('LAST_CHANGE_DATETIME',array('kind'=>'daterange','query'=>'like','pos'=>'both','show'=>true))
         );
 
-        /*
-        $categoryFilter = Input::get('categoryFilter');
-        if($categoryFilter != ''){
-            $this->additional_query = array('shopcategoryLink'=>$categoryFilter, 'group_id'=>4);
-        }
-        */
 
         $this->def_order_by = 'ACNT_CODE';
         $this->def_order_dir = 'ASC';

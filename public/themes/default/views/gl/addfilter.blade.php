@@ -3,7 +3,27 @@
     $cy = date('Y',time());
     $dperiod = $cy.$cm;
 ?>
-{{Former::open_for_files_vertical(URL::to('gl'),'GET',array('class'=>''))}}
+{{Former::open_for_files_vertical(URL::to($submit_url),'GET',array('class'=>''))}}
+    <div class="row">
+        <div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
+            <h5>Company</h5>
+        </div>
+        <div class="col-xs-10 col-sm-10 col-md-10 col-lg-10">
+            <?php
+                $c = Input::get('acc-company');
+                if($c == ''){
+                    $c = Config::get('lundin.default_company');
+                }
+            ?>
+            {{ Former::select('acc-company', '')
+                    ->options(Prefs::getCompany()->CompanyToSelection('DB_CODE', 'DESCR', false ),  $c )
+                    ->class('form-control form-white input-sm')
+                    ->id('acc-company');
+            }}
+
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
             <h5>Acc Period</h5>

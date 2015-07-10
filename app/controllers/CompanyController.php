@@ -34,9 +34,12 @@ class CompanyController extends AdminController {
         $this->heads = array(
             array('Company Name',array('search'=>true,'sort'=>true)),
             array('Company Code',array('search'=>true,'sort'=>true)),
-            array('Created',array('search'=>true,'sort'=>true,'daterange'=>true)),
             array('Last Update',array('search'=>true,'sort'=>true,'daterange'=>true)),
         );
+
+        $this->place_action = 'none';
+        $this->show_select = false;
+        $this->can_add = false;
 
         //print $this->model->where('docFormat','picture')->get()->toJSON();
         //$this->title = 'Companies';
@@ -50,13 +53,21 @@ class CompanyController extends AdminController {
     {
 
         $this->fields = array(
-            array('companyName',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
-            array('companyCode',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
-            array('createdDate',array('kind'=>'datetime','query'=>'like','pos'=>'both','show'=>true)),
-            array('lastUpdate',array('kind'=>'datetime','query'=>'like','pos'=>'both','show'=>true)),
+            array('DESCR',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
+            array('DB_CODE',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
+            array('LAST_CHANGE_DATETIME',array('kind'=>'datetime','query'=>'like','pos'=>'both','show'=>true)),
         );
 
-        return parent::postIndex();
+        $this->def_order_by = 'LAST_CHANGE_DATETIME';
+        $this->def_order_dir = 'ASC';
+        $this->place_action = 'none';
+        $this->show_select = false;
+
+        $this->sql_key = 'DB_CODE';
+        $this->sql_table_name = 'db_defn';
+        $this->sql_connection = 'mysql3';
+
+        return parent::postSQLIndex();
     }
 
     public function postAdd($data = null)
@@ -84,8 +95,8 @@ class CompanyController extends AdminController {
 
     public function makeActions($data)
     {
-        $delete = '<span class="del" id="'.$data['_id'].'" ><i class="fa fa-trash"></i>Delete</span>';
-        $edit = '<a href="'.URL::to('company/edit/'.$data['_id']).'"><i class="fa fa-edit"></i>Update</a>';
+        $delete = '<span class="del" id="'.$data['DB_CODE'].'" ><i class="fa fa-trash"></i>Delete</span>';
+        $edit = '<a href="'.URL::to('company/edit/'.$data['DB_CODE']).'"><i class="fa fa-edit"></i>Update</a>';
 
         $actions = $edit.'<br />'.$delete;
         return $actions;
@@ -121,9 +132,9 @@ class CompanyController extends AdminController {
 
     public function namePic($data)
     {
-        $name = HTML::link('products/view/'.$data['_id'],$data['productName']);
+        $name = HTML::link('products/view/'.$data['DB_CODE'],$data['productName']);
         if(isset($data['thumbnail_url']) && count($data['thumbnail_url'])){
-            $display = HTML::image($data['thumbnail_url'][0].'?'.time(), $data['filename'][0], array('id' => $data['_id']));
+            $display = HTML::image($data['thumbnail_url'][0].'?'.time(), $data['filename'][0], array('id' => $data['DB_CODE']));
             return $display.'<br />'.$name;
         }else{
             return $name;
@@ -132,10 +143,10 @@ class CompanyController extends AdminController {
 
     public function pics($data)
     {
-        $name = HTML::link('products/view/'.$data['_id'],$data['productName']);
+        $name = HTML::link('products/view/'.$data['DB_CODE'],$data['productName']);
         if(isset($data['thumbnail_url']) && count($data['thumbnail_url'])){
-            $display = HTML::image($data['thumbnail_url'][0].'?'.time(), $data['filename'][0], array('style'=>'min-width:100px;','id' => $data['_id']));
-            return $display.'<br /><span class="img-more" id="'.$data['_id'].'">more images</span>';
+            $display = HTML::image($data['thumbnail_url'][0].'?'.time(), $data['filename'][0], array('style'=>'min-width:100px;','id' => $data['DB_CODE']));
+            return $display.'<br /><span class="img-more" id="'.$data['DB_CODE'].'">more images</span>';
         }else{
             return $name;
         }

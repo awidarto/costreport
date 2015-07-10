@@ -27,6 +27,7 @@
 th{
 	border-right:thin solid #eee;
 	border-top: thin solid #eee;
+    vertical-align: top;
 }
 
 th:first-child{
@@ -65,7 +66,9 @@ td a{
 }
 
 td{
-    font-size: 12px;
+    font-size: 11px;
+    padding: 4px 6px 6px 4px !important;
+    hyphens:none !important;
 }
 
 select.input-sm {
@@ -90,6 +93,13 @@ select.input-sm {
     border: none;
 }
 
+.column-amt{
+    text-align: right;
+}
+
+.column-nowrap{
+    white-space: nowrap !important;
+}
 </style>
 
 
@@ -115,6 +125,20 @@ select.input-sm {
             @if(isset($is_additional_action) && $is_additional_action == true)
                 {{ $additional_action }}
             @endif
+
+            <?php
+                $in = Input::get();
+                if(count($in) > 0){
+                    $get = array();
+                    foreach($in as $k=>$v){
+                        $get[] = $k.'='.$v;
+                    }
+                    $print_url = $printlink.'?'.implode('&', $get);
+                }else{
+                    $print_url = $printlink;
+                }
+            ?>
+            <a href="{{ URL::to($print_url) }}" class="btn btn-sm btn-transparent btn-primary"><i class="fa fa-print"></i> Print Preview</a>
 
          </div>
          <div class="col-md-6 command-bar">
@@ -347,13 +371,12 @@ select.input-sm {
 		        "sAjaxSource": "{{$ajaxsource}}",
 				"oLanguage": { "sSearch": "Search "},
 				"sPaginationType": "full_numbers",
-                "sDom": 'lpirt',
+                "sDom": "lpirt",
 				"iDisplayLength":50,
                 "initComplete": function(settings, json){
                     //alert( 'DataTables has finished its initialisation.' );
                     $('.dataTables_length select').select2('destroy');
                 },
-
 				@if(isset($excludecol) && $excludecol != '')
 				"oColVis": {
 					"aiExclude": [ {{ $excludecol }} ]
@@ -365,7 +388,8 @@ select.input-sm {
 				},
 
 				"aoColumnDefs": [
-				    { "bSortable": false, "aTargets": [ {{ $disablesort }} ] }
+				    { "bSortable": false, "aTargets": [ {{ $disablesort }} ] },
+                    {{ $column_styles }}
 				 ],
 			    "fnServerData": function ( sSource, aoData, fnCallback ) {
 			    	{{ $js_additional_param }}

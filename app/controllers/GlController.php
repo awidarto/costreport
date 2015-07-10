@@ -18,13 +18,6 @@ class GlController extends AdminController {
 
     }
 
-    public function getTest()
-    {
-        $raw = $this->model->where('docFormat','like','picture')->get();
-
-        print $raw->toJSON();
-    }
-
     public function getDetail($id)
     {
         $_id = new MongoId($id);
@@ -89,131 +82,20 @@ class GlController extends AdminController {
                     ->with('table',$itemtable);
     }
 
-
-    public function getHistory($id)
-    {
-        $_id = new MongoId($id);
-        $history = History::where('historyObject._id',$_id)->where('historyObjectType','asset')
-                        ->orderBy('historyTimestamp','desc')
-                        ->orderBy('historySequence','desc')
-                        ->get();
-        $diffs = array();
-
-        foreach($history as $h){
-            $h->date = date( 'Y-m-d H:i:s', $h->historyTimestamp->sec );
-            $diffs[$h->date][$h->historySequence] = $h->historyObject;
-        }
-
-        $history = History::where('historyObject._id',$_id)->where('historyObjectType','asset')
-                        ->where('historySequence',0)
-                        ->orderBy('historyTimestamp','desc')
-                        ->get();
-
-        $tab_data = array();
-        foreach($history as $h){
-                $apv_status = Assets::getApprovalStatus($h->approvalTicket);
-                if($apv_status == 'pending'){
-                    $bt_apv = '<span class="btn btn-info change-approval '.$h->approvalTicket.'" data-id="'.$h->approvalTicket.'" >'.$apv_status.'</span>';
-                }else if($apv_status == 'verified'){
-                    $bt_apv = '<span class="btn btn-success" >'.$apv_status.'</span>';
-                }else{
-                    $bt_apv = '';
-                }
-                $d = date( 'Y-m-d H:i:s', $h->historyTimestamp->sec );
-                $tab_data[] = array(
-                    $d,
-                    $h->historyAction,
-                    $h->historyObject['itemDescription'],
-                    ($h->historyAction == 'new')?'NA':$this->objdiff( $diffs[$d] ),
-                    $bt_apv
-                );
-        }
-
-        $header = array(
-            'Modified',
-            'Event',
-            'Name',
-            'Diff',
-            'Approval'
-            );
-
-        $attr = array('class'=>'table', 'id'=>'transTab', 'style'=>'width:100%;', 'border'=>'0');
-        $t = new HtmlTable($tab_data, $attr, $header);
-        $itemtable = $t->build();
-
-        $asset = Asset::find($id);
-
-        Breadcrumbs::addCrumb('Assets',URL::to( strtolower($this->controller_name) ));
-        Breadcrumbs::addCrumb('History',URL::to( strtolower($this->controller_name) ));
-
-        return View::make('history.table')
-                    ->with('a',$asset)
-                    ->with('title','Change History')
-                    ->with('table',$itemtable);
-    }
-
-    public function objdiff($obj)
-    {
-
-        if(is_array($obj) && count($obj) == 2){
-            $diff = array();
-            foreach ($obj[0] as $key=>$value) {
-                if(isset($obj[0][$key]) && isset($obj[1][$key])){
-                    if($obj[0][$key] !== $obj[1][$key]){
-                        if($key != '_id' && $key != 'createdDate' && $key != 'lastUpdate'){
-                            if( is_string($obj[0][$key]) && is_string($obj[1][$key]) ){
-                                $diff[] = $key.' : '. $obj[0][$key].' -> '.$obj[1][$key];
-                            }
-                        }
-                    }
-                }
-            }
-            return implode('<br />', $diff);
-        }else{
-            return 'NA';
-        }
-    }
-
-    public function ismoving($obj){
-        $location_move = false;
-        $rack_move = false;
-        if(is_array($obj) && count($obj) == 2){
-
-            if(isset($obj[0]['locationId']) && isset($obj[1]['locationId'])){
-                if($obj[0]['locationId'] !== $obj[0]['locationId']){
-                    $location_move = true;
-                }
-            }
-
-            if(isset($obj[0]['rackId']) && isset($obj[1]['rackId'])){
-                if($obj[0]['rackId'] !== $obj[0]['rackId']){
-                    $rack_move = true;
-                }
-            }
-
-            return array(
-                    'location_move'=>$location_move,
-                    'rack_move'=>$rack_move
-                );
-        }else{
-            return 'NA';
-        }
-
-    }
-
     public function getIndex()
     {
 
 
         $this->heads = array(
-            array('Period',array('search'=>true,'sort'=>true,'daterange'=>true)),
-            array('Date',array('search'=>true,'sort'=>true,'daterange'=>true)),
-            array('JV Ref',array('search'=>true,'sort'=>true)),
-            array('Account',array('search'=>true,'sort'=>true)),
-            array('Account Description',array('search'=>true,'sort'=>true)),
+            array('Period',array('search'=>true,'sort'=>true, 'style'=>'min-width:90px;','daterange'=>true)),
+            array('Date',array('search'=>true,'sort'=>true, 'style'=>'min-width:100px;','daterange'=>true)),
+            array('JV Ref',array('search'=>true,'sort'=>true, 'style'=>'min-width:120px;')),
+            array('Account',array('search'=>true,'style'=>'min-width:100px;','sort'=>true)),
+            array('Account Description',array('search'=>true,'style'=>'min-width:125px;','sort'=>true)),
             array('Reference Doc.',array('search'=>true,'sort'=>true)),
             array('Orig. Currency',array('search'=>true,'sort'=>true)),
             array('Orig. Amount',array('search'=>true,'sort'=>true)),
+            array('Conversion Rate',array('search'=>true,'sort'=>true)),
             array('Base Amount',array('search'=>true,'sort'=>true)),
             array('Transaction Description',array('search'=>true,'sort'=>true)),
         );
@@ -228,11 +110,16 @@ class GlController extends AdminController {
 
         Breadcrumbs::addCrumb('Cost Report',URL::to( strtolower($this->controller_name) ));
 
-        $this->additional_filter = View::make(strtolower($this->controller_name).'.addfilter')->render();
+        $this->additional_filter = View::make(strtolower($this->controller_name).'.addfilter')->with('submit_url','gl')->render();
 
-        $this->js_additional_param = "aoData.push( { 'name':'acc-period-to', 'value': $('#acc-period-to').val() }, { 'name':'acc-period-from', 'value': $('#acc-period-from').val() }, { 'name':'acc-code-from', 'value': $('#acc-code-from').val() }, { 'name':'acc-code-to', 'value': $('#acc-code-to').val() } );";
+        $this->js_additional_param = "aoData.push( { 'name':'acc-period-to', 'value': $('#acc-period-to').val() }, { 'name':'acc-period-from', 'value': $('#acc-period-from').val() }, { 'name':'acc-code-from', 'value': $('#acc-code-from').val() }, { 'name':'acc-code-to', 'value': $('#acc-code-to').val() }, { 'name':'acc-company', 'value': $('#acc-company').val() } );";
 
         $this->product_info_url = strtolower($this->controller_name).'/info';
+
+        $this->column_styles = '{ "sClass": "column-amt", "aTargets": [ 8 ] },
+                    { "sClass": "column-amt", "aTargets": [ 9 ] },
+                    { "sClass": "column-amt", "aTargets": [ 10 ] },
+                    { "sClass": "column-nowrap", "aTargets": [ 11 ] }';
 
         return parent::getIndex();
 
@@ -249,7 +136,8 @@ class GlController extends AdminController {
             array('j10_acnt.DESCR',array('kind'=>'text', 'alias'=>'ACC_DESCR' , 'query'=>'like', 'pos'=>'both','show'=>true)),
             array('TREFERENCE',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
             array('CONV_CODE',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
-            array('AMOUNT',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
+            array('OTHER_AMT',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
+            array('BASE_RATE',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
             array('AMOUNT',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
             array('DESCRIPTN',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true))
         );
@@ -261,16 +149,182 @@ class GlController extends AdminController {
         }
         */
 
+        $db = Config::get('lundin.main_db');
+
+        $company = Input::get('acc-company');
+
+        $company = strtolower($company);
+
+        if(Schema::hasTable( $db.'.'.$company.'_a_salfldg' )){
+            $company = Config::get('lundin.default_company');
+        }
+
+        $company = strtolower($company);
+
         $this->def_order_by = 'TRANS_DATETIME';
         $this->def_order_dir = 'DESC';
         $this->place_action = 'none';
         $this->show_select = false;
 
         $this->sql_key = 'TRANS_DATETIME';
-        $this->sql_table_name = 'j10_a_salfldg';
+        $this->sql_table_name = $company.'_a_salfldg';
         $this->sql_connection = 'mysql2';
 
         return parent::SQLtableResponder();
+    }
+
+    public function getStatic()
+    {
+
+        $this->heads = array(
+            array('Period',array('search'=>true,'sort'=>true, 'style'=>'min-width:90px;','daterange'=>true)),
+            array('Date',array('search'=>true,'sort'=>true, 'style'=>'min-width:100px;','daterange'=>true)),
+            array('JV Ref',array('search'=>true,'sort'=>true, 'style'=>'min-width:120px;')),
+            array('Account',array('search'=>true,'style'=>'min-width:100px;','sort'=>true)),
+            array('Account Description',array('search'=>true,'style'=>'min-width:125px;','sort'=>true)),
+            array('Reference Doc.',array('search'=>true,'sort'=>true)),
+            array('Orig. Currency',array('search'=>true,'sort'=>true)),
+            array('Orig. Amount',array('search'=>true,'sort'=>true)),
+            array('Conversion Rate',array('search'=>true,'sort'=>true)),
+            array('Base Amount',array('search'=>true,'sort'=>true)),
+            array('Transaction Description',array('search'=>true,'sort'=>true)),
+        );
+
+        //print $this->model->where('docFormat','picture')->get()->toJSON();
+
+        $this->title = 'General Ledger';
+
+        $this->place_action = 'none';
+
+        $this->show_select = false;
+
+        Breadcrumbs::addCrumb('Cost Report',URL::to( strtolower($this->controller_name) ));
+
+        $this->additional_filter = View::make(strtolower($this->controller_name).'.addfilter')->with('submit_url','gl/static')->render();
+
+        $this->js_additional_param = "aoData.push( { 'name':'acc-period-to', 'value': $('#acc-period-to').val() }, { 'name':'acc-period-from', 'value': $('#acc-period-from').val() }, { 'name':'acc-code-from', 'value': $('#acc-code-from').val() }, { 'name':'acc-code-to', 'value': $('#acc-code-to').val() }, { 'name':'acc-company', 'value': $('#acc-company').val() } );";
+
+        $this->product_info_url = strtolower($this->controller_name).'/info';
+
+        $this->printlink = strtolower($this->controller_name).'/print';
+
+        //table generator part
+
+        $this->fields = array(
+            array('PERIOD',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
+            array('TRANS_DATETIME',array('kind'=>'daterange', 'query'=>'like','pos'=>'both','show'=>true)),
+            array('VCHR_NUM',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
+            array('ACCNT_CODE',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
+            array('j10_acnt.DESCR',array('kind'=>'text', 'alias'=>'ACC_DESCR' , 'query'=>'like', 'pos'=>'both','show'=>true)),
+            array('TREFERENCE',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
+            array('CONV_CODE',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
+            array('OTHER_AMT',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true, 'class'=>'column-amt' )),
+            array('BASE_RATE',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true, 'class'=>'column-amt' )),
+            array('AMOUNT',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true, 'class'=>'column-amt' )),
+            array('DESCRIPTN',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true))
+        );
+
+        $db = Config::get('lundin.main_db');
+
+        $company = Input::get('acc-company');
+
+        $company = strtolower($company);
+
+        if(Schema::hasTable( $db.'.'.$company.'_a_salfldg' )){
+            $company = Config::get('lundin.default_company');
+        }
+
+        $company = strtolower($company);
+
+        $this->def_order_by = 'TRANS_DATETIME';
+        $this->def_order_dir = 'DESC';
+        $this->place_action = 'none';
+        $this->show_select = false;
+
+        $this->sql_key = 'TRANS_DATETIME';
+        $this->sql_table_name = $company.'_a_salfldg';
+        $this->sql_connection = 'mysql2';
+
+        $this->responder_type = 's';
+
+        return parent::printGenerator();
+    }
+
+    public function getPrint()
+    {
+
+        $this->heads = array(
+            array('Period',array('search'=>true,'sort'=>true, 'style'=>'min-width:90px;','daterange'=>true)),
+            array('Date',array('search'=>true,'sort'=>true, 'style'=>'min-width:100px;','daterange'=>true)),
+            array('JV Ref',array('search'=>true,'sort'=>true, 'style'=>'min-width:120px;')),
+            array('Account',array('search'=>true,'style'=>'min-width:100px;','sort'=>true)),
+            array('Account Description',array('search'=>true,'style'=>'min-width:125px;','sort'=>true)),
+            array('Reference Doc.',array('search'=>true,'sort'=>true)),
+            array('Orig. Currency',array('search'=>true,'sort'=>true)),
+            array('Orig. Amount',array('search'=>true,'sort'=>true)),
+            array('Conversion Rate',array('search'=>true,'sort'=>true)),
+            array('Base Amount',array('search'=>true,'sort'=>true)),
+            array('Transaction Description',array('search'=>true,'sort'=>true)),
+        );
+
+        //print $this->model->where('docFormat','picture')->get()->toJSON();
+
+        $this->title = 'General Ledger';
+
+        $this->place_action = 'none';
+
+        $this->show_select = false;
+
+        Breadcrumbs::addCrumb('Cost Report',URL::to( strtolower($this->controller_name) ));
+
+        $this->additional_filter = View::make(strtolower($this->controller_name).'.addfilter')->with('submit_url','gl/static')->render();
+
+        $this->js_additional_param = "aoData.push( { 'name':'acc-period-to', 'value': $('#acc-period-to').val() }, { 'name':'acc-period-from', 'value': $('#acc-period-from').val() }, { 'name':'acc-code-from', 'value': $('#acc-code-from').val() }, { 'name':'acc-code-to', 'value': $('#acc-code-to').val() }, { 'name':'acc-company', 'value': $('#acc-company').val() } );";
+
+        $this->product_info_url = strtolower($this->controller_name).'/info';
+
+        $this->printlink = strtolower($this->controller_name).'/print';
+
+        //table generator part
+
+        $this->fields = array(
+            array('PERIOD',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true )),
+            array('TRANS_DATETIME',array('kind'=>'daterange', 'query'=>'like','pos'=>'both','show'=>true)),
+            array('VCHR_NUM',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
+            array('ACCNT_CODE',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
+            array('j10_acnt.DESCR',array('kind'=>'text', 'alias'=>'ACC_DESCR' , 'query'=>'like', 'pos'=>'both','show'=>true)),
+            array('TREFERENCE',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
+            array('CONV_CODE',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
+            array('OTHER_AMT',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true , 'class'=>'column-amt' )),
+            array('BASE_RATE',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true , 'class'=>'column-amt' )),
+            array('AMOUNT',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true , 'class'=>'column-amt' )),
+            array('DESCRIPTN',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true))
+        );
+
+        $db = Config::get('lundin.main_db');
+
+        $company = Input::get('acc-company');
+
+        $company = strtolower($company);
+
+        if(Schema::hasTable( $db.'.'.$company.'_a_salfldg' )){
+            $company = Config::get('lundin.default_company');
+        }
+
+        $company = strtolower($company);
+
+        $this->def_order_by = 'TRANS_DATETIME';
+        $this->def_order_dir = 'DESC';
+        $this->place_action = 'none';
+        $this->show_select = false;
+
+        $this->sql_key = 'TRANS_DATETIME';
+        $this->sql_table_name = $company.'_a_salfldg';
+        $this->sql_connection = 'mysql2';
+
+        $this->responder_type = 's';
+
+        return parent::printPage();
     }
 
     public function SQL_make_join($model)
@@ -291,16 +345,32 @@ class GlController extends AdminController {
         $period_from = Input::get('acc-period-from');
         $period_to = Input::get('acc-period-to');
 
+        $db = Config::get('lundin.main_db');
+
+        $company = Input::get('acc-company');
+
+        $company = strtolower($company);
+
+        if(Schema::hasTable( $db.'.'.$company.'_a_salfldg' )){
+            $company = Config::get('lundin.default_company');
+        }
+
+        $company = strtolower($company);
+
+
         if($period_from == ''){
-            $model = $model->select('j10_a_salfldg.*','j10_acnt.DESCR as ACC_DESCR')
-                ->leftJoin('j10_acnt', 'j10_a_salfldg.ACCNT_CODE', '=', 'j10_acnt.ACNT_CODE' );
+            $model = $model->select($company.'_a_salfldg.*',$company.'_acnt.DESCR as ACC_DESCR')
+                ->leftJoin($company.'_acnt', $company.'_a_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' );
         }else{
-            $model = $model->select('j10_a_salfldg.*','j10_acnt.DESCR as ACC_DESCR')
-                ->leftJoin('j10_acnt', 'j10_a_salfldg.ACCNT_CODE', '=', 'j10_acnt.ACNT_CODE' )
+            $model = $model->select($company.'_a_salfldg.*',$company.'_acnt.DESCR as ACC_DESCR')
+                ->leftJoin($company.'_acnt', $company.'_a_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
                 ->where('PERIOD','>=', Input::get('acc-period-from') )
                 ->where('PERIOD','<=', Input::get('acc-period-to') )
                 ->where('ACCNT_CODE','>=', Input::get('acc-code-from') )
-                ->where('ACCNT_CODE','<=', Input::get('acc-code-to') );
+                ->where('ACCNT_CODE','<=', Input::get('acc-code-to') )
+                ->orderBy('PERIOD','DESC')
+                ->orderBy('ACCNT_CODE','ASC')
+                ->orderBy('TRANS_DATETIME','DESC');
         }
 
 
@@ -313,6 +383,139 @@ class GlController extends AdminController {
 
     }
 
+    public function SQL_before_paging($model)
+    {
+        $m_original_amount = clone($model);
+        $m_base_amount = clone($model);
+
+        $aux['total_data_base'] = $m_base_amount->sum('OTHER_AMT');
+        $aux['total_data_converted'] = $m_original_amount->sum('AMOUNT');
+
+        //$this->aux_data = $aux;
+
+        return $aux;
+        //print_r($this->aux_data);
+
+    }
+
+    public function rows_post_process($rows, $aux = null){
+
+        //print_r($this->aux_data);
+
+        $total_base = 0;
+        $total_converted = 0;
+        $end = 0;
+
+        $br = array_fill(0, $this->column_count(), '');
+
+
+        $nrows = array();
+
+        $subhead1 = '';
+        $subhead2 = '';
+        $subhead3 = '';
+
+        $seq = 0;
+
+        $subamount1 = 0;
+        $subamount2 = 0;
+
+        if(count($rows) > 0){
+
+            for($i = 0; $i < count($rows);$i++){
+
+                //print_r($rows[$i]['extra']);
+
+                if($subhead1 == '' || $subhead1 != $rows[$i][1] || $subhead2 != $rows[$i][4] ){
+
+                    $headline = $br;
+                    if($subhead1 != $rows[$i][1]){
+                        $headline[1] = '<b>'.$rows[$i]['extra']['PERIOD'].'</b>';
+                    }else{
+                        $headline[1] = '';
+                    }
+
+                    $headline[4] = '<b>'.$rows[$i]['extra']['ACCNT_CODE'].'</b>';
+                    $headline['extra']['rowclass'] = 'row-underline';
+
+                    if($subhead1 != ''){
+                        $amtline = $br;
+                        $amtline[8] = '<b>'.Ks::idr($subamount1).'</b>';
+                        $amtline[10] = '<b>'.Ks::idr($subamount2).'</b>';
+                        $amtline['extra']['rowclass'] = 'row-doubleunderline row-overline';
+
+                        $nrows[] = $amtline;
+                        $subamount1 = 0;
+                        $subamount2 = 0;
+                    }
+
+                    $subamount1 += $rows[$i]['extra']['OTHER_AMT'];
+                    $subamount2 += $rows[$i]['extra']['AMOUNT'];
+
+                    $nrows[] = $headline;
+
+                    $seq = 1;
+                    $rows[$i][0] = $seq;
+
+                    $rows[$i][8] = ($rows[$i]['extra']['CONV_CODE'] == 'IDR')?Ks::idr($rows[$i][8]):'';
+                    $rows[$i][9] = ($rows[$i]['extra']['CONV_CODE'] == 'IDR')?Ks::dec2($rows[$i][9]):'';
+                    $rows[$i][10] = Ks::usd($rows[$i][10]);
+
+                    $nrows[] = $rows[$i];
+                }else{
+                    $seq++;
+                    $rows[$i][0] = $seq;
+
+                    $rows[$i][8] = ($rows[$i]['extra']['CONV_CODE'] == 'IDR')?Ks::idr($rows[$i][8]):'';
+                    $rows[$i][9] = ($rows[$i]['extra']['CONV_CODE'] == 'IDR')?Ks::dec2($rows[$i][9]):'';
+                    $rows[$i][10] = Ks::idr($rows[$i][10]);
+
+                    $nrows[] = $rows[$i];
+
+
+                }
+
+                $total_base += doubleval( $rows[$i][8] );
+                $total_converted += doubleval($rows[$i][10]);
+                $end = $i;
+
+                $subhead1 = $rows[$i][1];
+                $subhead2 = $rows[$i][4];
+            }
+
+            // show total Page
+            if($this->column_count() > 0){
+
+                $tb = $br;
+                $tb[1] = 'Total Page';
+                $tb[8] = $total_base;
+                $tb[10] = $total_converted;
+
+                $nrows[] = $tb;
+
+                if(!is_null($this->aux_data)){
+                    $td = $br;
+                    $td[1] = 'Total';
+                    $td[8] = Ks::usd($aux['total_data_base']);
+                    $td[10] = Ks::usd($aux['total_data_converted']);
+                    $nrows[] = $td;
+                }
+
+            }
+
+            return $nrows;
+
+        }else{
+
+            return $rows;
+
+        }
+
+
+        // show total queried
+
+
+    }
 
 
     public function beforeSave($data)

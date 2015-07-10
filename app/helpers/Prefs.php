@@ -162,7 +162,7 @@ class Prefs {
         }
 
         foreach (self::$role as $c) {
-            $ret[$c->{$value}] = $c->{$label};
+            $ret[$c->{$value}] = $c->{$value}.' - '.$c->{$label};
         }
 
 

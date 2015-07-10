@@ -1,8 +1,7 @@
 <?php
-use Jenssegers\Mongodb\Model as Eloquent;
-
 class Company extends Eloquent {
 
-    protected $collection = 'companies';
+    protected $connection = 'mysql3';
+    protected $table = 'db_defn';
 
 }

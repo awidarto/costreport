@@ -50,6 +50,8 @@ class AdminController extends Controller {
 
     public $backlink = '';
 
+    public $printlink = '';
+
     public $makeActions = 'makeActions';
 
     public $can_add = true;
@@ -65,6 +67,8 @@ class AdminController extends Controller {
     public $additional_filter = '';
 
     public $js_additional_param = '';
+
+    public $table_raw = '';
 
     public $table_dnd = false;
 
@@ -110,6 +114,16 @@ class AdminController extends Controller {
     public $product_info_url = null;
 
     public $prefix = null;
+
+    public $no_paging = false;
+
+    public $aux_data = null;
+
+    public $column_styles = '';
+
+    public $responder_type = 's';
+
+    public $print = false;
 
 	public function __construct(){
 
@@ -159,6 +173,15 @@ class AdminController extends Controller {
         return $this->pageGenerator();
     }
 
+    public function getPrint()
+    {
+
+        $actor = (isset(Auth::user()->email))?Auth::user()->fullname.' - '.Auth::user()->email:'guest';
+        Event::fire('log.a',array($controller_name, 'print page' ,$actor,'OK'));
+
+        return $this->printPage();
+    }
+
     public function postIndex()
     {
 
@@ -170,11 +193,73 @@ class AdminController extends Controller {
         return $this->SQLtableResponder();
     }
 
+    public function printGenerator()
+    {
+
+
+        Breadcrumbs::addCrumb($this->title,URL::to('/'));
+
+        $controller_name = strtolower($this->controller_name);
+
+        $this->print = true;
+        $this->no_paging = true;
+
+        if($this->responder_type == 's'){
+            $table = $this->SQLtableResponder();
+        }else{
+            $table = $this->tableResponder();
+        }
+
+        $actor = (isset(Auth::user()->email))?Auth::user()->fullname.' - '.Auth::user()->email:'guest';
+        Event::fire('log.a',array($controller_name, 'view static list' ,$actor,'OK'));
+
+
+        $this->table_view = 'print.table';
+
+        $this->table_raw = $table;
+
+        //print_r($table);
+
+        return $this->pageGenerator();
+    }
+
+    public function printPage()
+    {
+
+
+        Breadcrumbs::addCrumb($this->title,URL::to('/'));
+
+        $controller_name = strtolower($this->controller_name);
+
+        $this->print = true;
+        $this->no_paging = true;
+
+        if($this->responder_type == 's'){
+            $table = $this->SQLtableResponder();
+        }else{
+            $table = $this->tableResponder();
+        }
+
+        $actor = (isset(Auth::user()->email))?Auth::user()->fullname.' - '.Auth::user()->email:'guest';
+        Event::fire('log.a',array($controller_name, 'view static list' ,$actor,'OK'));
+
+
+        $this->table_view = 'print.plain';
+
+        $this->table_raw = $table;
+
+        //print_r($table);
+
+        return $this->pageGenerator();
+    }
+
+
 	public function pageGenerator(){
 
 		//$action_selection = Former::select( Config::get('kickstart.actionselection'))->name('action');
 
 		$heads = $this->heads;
+        $fields = $this->fields;
 
         $this->ajaxsource = (is_null($this->ajaxsource))? strtolower($this->controller_name): $this->ajaxsource;
 
@@ -199,18 +284,24 @@ class AdminController extends Controller {
         $start_index = -1;
         if($this->place_action == 'both' || $this->place_action == 'first'){
             array_unshift($heads, array('Actions',array('sort'=>false,'clear'=>true,'class'=>'action')));
+            array_unshift($fields, array('',array('sort'=>false,'clear'=>true,'class'=>'action')));
         }
         if($this->show_select == true){
             array_unshift($heads, array($select_all,array('sort'=>false)));
+            array_unshift($fields, array('',array('sort'=>false)));
         }else{
             $start_index = $start_index + 1;
         }
 		array_unshift($heads, array('#',array('sort'=>false)));
+        array_unshift($fields, array('',array('sort'=>false)));
 
 		// add action column
         if($this->place_action == 'both'){
             array_push($heads,
                 array('Actions',array('search'=>false,'sort'=>false,'clear'=>true,'class'=>'action'))
+            );
+            array_push($fields,
+                array('',array('search'=>false,'sort'=>false,'clear'=>true,'class'=>'action'))
             );
         }
 
@@ -229,6 +320,10 @@ class AdminController extends Controller {
         $this->dlxl = (is_null($this->dlxl))? strtolower($this->controller_name).'/dlxl': $this->dlxl;
 
 
+        $this->printlink = (is_null($this->printlink) || $this->printlink == '')? strtolower($this->controller_name).'/static': $this->printlink;
+
+        //print_r($this->table_raw);
+
 		return View::make($this->table_view)
 			->with('title',$this->title )
 			->with('newbutton', $this->newbutton )
@@ -239,6 +334,7 @@ class AdminController extends Controller {
 			->with('ajaxdel',URL::to($this->delurl) )
             ->with('ajaxdlxl',URL::to($this->dlxl) )
 			->with('crumb',$this->crumb )
+            ->with('printlink', $this->printlink )
             ->with('can_add', $this->can_add )
             ->with('is_report',$this->is_report)
             ->with('report_action',$this->report_action)
@@ -247,6 +343,7 @@ class AdminController extends Controller {
             ->with('additional_filter',$this->additional_filter)
             ->with('js_additional_param', $this->js_additional_param)
             ->with('modal_sets', $this->modal_sets)
+            ->with('table',$this->table_raw)
             ->with('table_dnd', $this->table_dnd)
             ->with('table_dnd_url', $this->table_dnd_url)
             ->with('table_dnd_idx', $this->table_dnd_idx)
@@ -255,11 +352,13 @@ class AdminController extends Controller {
             ->with('table_group_idx', $this->table_group_idx)
             ->with('table_group_collapsible', $this->table_group_collapsible)
             ->with('js_table_event', $this->js_table_event)
+            ->with('column_styles', $this->column_styles)
             ->with('additional_page_data',$this->additional_page_data)
             ->with('additional_table_param',$this->additional_table_param)
             ->with('product_info_url',$this->product_info_url)
             ->with('prefix',$this->prefix)
 			->with('heads',$heads )
+            ->with('fields',$fields)
             ->with('start_index',$start_index)
 			->with('row',$this->rowdetail );
 
@@ -656,6 +755,9 @@ class AdminController extends Controller {
 
         //print_r($fields);
 
+        //print 'print '.$this->print.' paging '.$this->no_paging;
+
+
         //array_unshift($fields, array('select',array('kind'=>false)));
         array_unshift($fields, array('seq',array('kind'=>false)));
 
@@ -920,7 +1022,14 @@ class AdminController extends Controller {
         //$count_display_all = $model->count();
         $count_display_all = $count_all;
 
-        $results = $model->skip( $pagestart )->take( $pagelength )->orderBy($sort_col, $sort_dir )->get();
+        $this->aux_data = $this->SQL_before_paging($model);
+
+        if($this->no_paging == true){
+            $results = $model->orderBy($sort_col, $sort_dir )->get();
+        }else{
+            $results = $model->skip( $pagestart )->take( $pagelength )->orderBy($sort_col, $sort_dir )->get();
+        }
+
 
         //$model = $this->SQL_make_join($model);
 
@@ -1078,18 +1187,35 @@ class AdminController extends Controller {
             $counter++;
         }
 
+        //print_r($this->aux_data);
+
+        $aadata = $this->rows_post_process($aadata, $this->aux_data);
+
         $sEcho = (int) Input::get('sEcho');
 
-        $result = array(
-            'sEcho'=>  $sEcho,
-            'iTotalRecords'=>$count_all,
-            'iTotalDisplayRecords'=> (is_null($count_display_all))?0:$count_display_all,
-            'aaData'=>$aadata,
-            'qrs'=>$last_query,
-            'sort'=>array($sort_col=>$sort_dir)
-        );
 
-        return Response::json($result);
+        if($this->print == true){
+            $result = array(
+                'sEcho'=>  $sEcho,
+                'iTotalRecords'=>$count_all,
+                'iTotalDisplayRecords'=> (is_null($count_display_all))?0:$count_display_all,
+                'aaData'=>$aadata,
+                'sort'=>array($sort_col=>$sort_dir)
+            );
+            return $result;
+        }else{
+            $result = array(
+                'sEcho'=>  $sEcho,
+                'iTotalRecords'=>$count_all,
+                'iTotalDisplayRecords'=> (is_null($count_display_all))?0:$count_display_all,
+                'aaData'=>$aadata,
+                'qrs'=>$last_query,
+                'sort'=>array($sort_col=>$sort_dir)
+            );
+
+            return Response::json($result);
+        }
+
     }
 
 	public function getAdd(){
@@ -1373,12 +1499,37 @@ class AdminController extends Controller {
         }
     }
 
+    public function rows_post_process($rows, $aux = null){
+        return $rows;
+    }
+
+    public function SQL_before_paging($model){
+        return $this->aux_data;
+    }
+
     public function SQL_make_join($model){
         return $model;
     }
 
     public function SQL_additional_query($model){
         return $model;
+    }
+
+    public function column_count(){
+
+        $count = count($this->fields);
+
+        if($this->place_action == 'both' || $this->place_action == 'first'){
+            $count++;
+        }
+
+        if($this->show_select == true){
+            $count++;
+        }
+
+        $count++;
+
+        return $count;
     }
 
     public function completeHeads($heads){
