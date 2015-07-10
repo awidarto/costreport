@@ -468,7 +468,7 @@ class GlController extends AdminController {
 
                     $rows[$i][8] = ($rows[$i]['extra']['CONV_CODE'] == 'IDR')?Ks::idr($rows[$i][8]):'';
                     $rows[$i][9] = ($rows[$i]['extra']['CONV_CODE'] == 'IDR')?Ks::dec2($rows[$i][9]):'';
-                    $rows[$i][10] = Ks::idr($rows[$i][10]);
+                    $rows[$i][10] = Ks::usd($rows[$i][10]);
 
                     $nrows[] = $rows[$i];
 
@@ -488,15 +488,15 @@ class GlController extends AdminController {
 
                 $tb = $br;
                 $tb[1] = 'Total Page';
-                $tb[8] = $total_base;
-                $tb[10] = $total_converted;
+                $tb[8] = Ks::idr($total_base);
+                $tb[10] = Ks::usd($total_converted);
 
                 $nrows[] = $tb;
 
                 if(!is_null($this->aux_data)){
                     $td = $br;
                     $td[1] = 'Total';
-                    $td[8] = Ks::usd($aux['total_data_base']);
+                    $td[8] = Ks::idr($aux['total_data_base']);
                     $td[10] = Ks::usd($aux['total_data_converted']);
                     $nrows[] = $td;
                 }
