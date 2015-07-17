@@ -111,6 +111,15 @@ class AjaxController extends BaseController {
         return Response::json($tree);
     }
 
+    public function postAfe()
+    {
+        $code = Input::get('code');
+
+        $select = Prefs::getAfe($code)->AfeToSelection('ANL_CODE', 'NAME', false );
+
+        return Response::json(array('result'=>'OK', 'selection'=>$select ));
+    }
+
     public function postScan()
     {
         $in = Input::get();

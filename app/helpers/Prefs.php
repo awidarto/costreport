@@ -8,6 +8,9 @@ class Prefs {
     public static $faqcategory;
     public static $productcategory;
     public static $role;
+    public static $afe;
+    public static $company;
+    public static $coa;
 
     public function __construct()
     {
@@ -145,11 +148,47 @@ class Prefs {
         return self::$role;
     }
 
+//afe
+    public static function getAfe($code){
+
+        $afe_table = strtolower($code).Config::get('lundin.afe_table');
+
+        $model = DB::connection(Config::get('lundin.afe_conn'))->table($afe_table);
+
+        $c = $model->where('ANL_CAT_ID','02')
+                ->where('ANL_CODE','like',$code.'%')->get();
+
+        self::$afe = $c;
+        return new self;
+    }
+
+    public function AfeToSelection($value, $label, $all = true)
+    {
+        if($all){
+            $ret = array(''=>'Select AFE');
+        }else{
+            $ret = array();
+        }
+
+        foreach (self::$afe as $c) {
+            $ret[$c->{$value}] = $c->{$value}.' - '.$c->{$label};
+        }
+
+
+        return $ret;
+    }
+
+    public function AfeToArray()
+    {
+        return self::$afe;
+    }
+
+
 //company
     public static function getCompany(){
         $c = Company::get();
 
-        self::$role = $c;
+        self::$company = $c;
         return new self;
     }
 
@@ -161,7 +200,7 @@ class Prefs {
             $ret = array();
         }
 
-        foreach (self::$role as $c) {
+        foreach (self::$company as $c) {
             $ret[$c->{$value}] = $c->{$value}.' - '.$c->{$label};
         }
 
@@ -171,14 +210,14 @@ class Prefs {
 
     public function CompanyToArray()
     {
-        return self::$role;
+        return self::$company;
     }
 
 //company
     public static function getCoa(){
         $c = Coa::get();
 
-        self::$role = $c;
+        self::$coa = $c;
         return new self;
     }
 
@@ -190,7 +229,7 @@ class Prefs {
             $ret = array();
         }
 
-        foreach (self::$role as $c) {
+        foreach (self::$coa as $c) {
             $ret[$c->{$value}] = $c->{$label};
         }
 
@@ -200,7 +239,7 @@ class Prefs {
 
     public function CoaToArray()
     {
-        return self::$role;
+        return self::$coa;
     }
 
 

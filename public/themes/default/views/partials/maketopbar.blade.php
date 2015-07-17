@@ -1,11 +1,40 @@
+<style type="text/css">
+  .menu-label{
+    text-align: center;
+    display: block;
+    font-size: 10px;
+  }
+</style>
+
         <div class="topbar">
           <div class="header-left">
             <div class="topnav">
-              <a class="menutoggle" href="#" data-toggle="sidebar-collapsed"><span class="menu__handle"><span>Menu</span></span></a>
+              <a class="menutoggle" href="#" data-toggle="sidebar-collapsed">
+                <span class="menu__handle"><span>Menu</span></span></a>
+                {{--
               <ul class="nav nav-icons">
-                <li><a href="#" class="toggle-sidebar-top"><span class="icon-user-following"></span></a></li>
-                <li><a href="mailbox.html"><span class="octicon octicon-mail-read"></span></a></li>
+                <li>
+                  <a href="{{ URL::to('/')}}" class="toggle-sidebar-top">
+                    <span class="icon-home"></span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#" class="toggle-sidebar-top">
+                    <span class="icon-users"></span>
+                  </a>
+                </li>
+                <li>
+                  <a href="{{ URL::to('gl')}}">
+                    <span class="fa fa-money"></span>
+                  </a>
+                </li>
+                <li>
+                  <a href="{{ URL::to('user') }}">
+                    <span class="fa fa-cog"></span>
+                  </a>
+                </li>
               </ul>
+                --}}
             </div>
           </div>
           <div class="header-right">

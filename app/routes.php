@@ -49,6 +49,7 @@ Route::controller('stafftime', 'StafftimeController');
 
 Route::controller('coa', 'CoaController');
 Route::controller('gl', 'GlController');
+Route::controller('afegl', 'AfeglController');
 
 Route::controller('approval', 'ApprovalController');
 Route::controller('activity', 'ActivityController');
@@ -86,6 +87,8 @@ Route::group(array('prefix' => 'api/v1'), function (){
     Route::resource('rack', 'Api\RackapiController');
     Route::resource('asset', 'Api\AssetapiController');
 });
+
+
 
 Route::get('btest',function(){
     $model = new Merchant();
