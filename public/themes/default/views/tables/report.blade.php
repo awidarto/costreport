@@ -71,6 +71,10 @@ td{
     hyphens:none !important;
 }
 
+th{
+    text-align: center;
+}
+
 select.input-sm {
     height: 30px;
     line-height: 30px;
