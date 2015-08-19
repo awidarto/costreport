@@ -28,6 +28,7 @@ th{
     border-right:thin solid #eee;
     border-top: thin solid #eee;
     vertical-align: top;
+    text-align: center;
 }
 
 th:first-child{
