@@ -48,8 +48,15 @@ Route::controller('nonstafftime', 'NonstafftimeController');
 Route::controller('stafftime', 'StafftimeController');
 
 Route::controller('coa', 'CoaController');
+Route::controller('accgroup', 'AccgroupController');
 Route::controller('gl', 'GlController');
 Route::controller('afegl', 'AfeglController');
+
+Route::controller('afelvltwo', 'AfelvltwoController');
+Route::controller('afelvlthree', 'AfelvlthreeController');
+
+Route::controller('cclvltwo', 'CclvltwoController');
+Route::controller('cclvlthree', 'CclvlthreeController');
 
 Route::controller('approval', 'ApprovalController');
 Route::controller('activity', 'ActivityController');

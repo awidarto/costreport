@@ -102,6 +102,10 @@ class AdminController extends Controller {
 
     public $table_view = 'tables.simple';
 
+    public $report_view = 'tables.report';
+
+    public $report_data = null;
+
     public $additional_table_param = array();
     //public $product_info_url = 'ajax/productinfo';
 
@@ -253,6 +257,18 @@ class AdminController extends Controller {
         return $this->pageGenerator();
     }
 
+    public function printReport()
+    {
+
+        $controller_name = strtolower($this->controller_name);
+
+        $actor = (isset(Auth::user()->email))?Auth::user()->fullname.' - '.Auth::user()->email:'guest';
+        Event::fire('log.a',array($controller_name, 'view static list' ,$actor,'OK'));
+
+        $this->report_view = 'print.report';
+
+        return $this->reportPageGenerator();
+    }
 
 	public function pageGenerator(){
 
@@ -365,6 +381,119 @@ class AdminController extends Controller {
 
 
 	}
+
+    public function reportPageGenerator(){
+
+        //$action_selection = Former::select( Config::get('kickstart.actionselection'))->name('action');
+
+        $heads = $this->heads;
+        $fields = $this->fields;
+
+        $this->ajaxsource = (is_null($this->ajaxsource))? strtolower($this->controller_name): $this->ajaxsource;
+
+        $this->addurl = (is_null($this->addurl))? strtolower($this->controller_name).'/add': $this->addurl;
+
+        $this->importurl = (is_null($this->importurl))? strtolower($this->controller_name).'/import': $this->importurl;
+
+        $this->rowdetail = (is_null($this->rowdetail))? strtolower($this->controller_name).'.rowdetail': $this->rowdetail;
+
+        $this->delurl = (is_null($this->delurl))? strtolower($this->controller_name).'/del': $this->delurl;
+
+        $this->newbutton = (is_null($this->newbutton))? Str::singular($this->controller_name): $this->newbutton;
+
+        //dialog related url
+        //$this->product_info_url = (is_null($this->product_info_url))? strtolower($this->controller_name).'/info': $this->product_info_url;
+
+        $this->prefix = (is_null($this->prefix))? strtolower($this->controller_name):$this->prefix;
+
+        $select_all = Former::checkbox()->name('All')->check(false)->id('select_all');
+
+        // add selector and sequence columns
+        $start_index = -1;
+        if($this->place_action == 'both' || $this->place_action == 'first'){
+            array_unshift($heads, array('Actions',array('sort'=>false,'clear'=>true,'class'=>'action')));
+            array_unshift($fields, array('',array('sort'=>false,'clear'=>true,'class'=>'action')));
+        }
+        if($this->show_select == true){
+            array_unshift($heads, array($select_all,array('sort'=>false)));
+            array_unshift($fields, array('',array('sort'=>false)));
+        }else{
+            $start_index = $start_index + 1;
+        }
+        array_unshift($heads, array('#',array('sort'=>false)));
+
+        array_unshift($fields, array('',array('sort'=>false)));
+
+        // add action column
+        if($this->place_action == 'both'){
+            array_push($heads,
+                array('Actions',array('search'=>false,'sort'=>false,'clear'=>true,'class'=>'action'))
+            );
+            array_push($fields,
+                array('',array('search'=>false,'sort'=>false,'clear'=>true,'class'=>'action'))
+            );
+        }
+
+        $disablesort = array();
+
+        for($s = 0; $s < count($heads);$s++){
+            if($heads[$s][1]['sort'] == false){
+                $disablesort[] = $s;
+            }
+        }
+
+        $disablesort = implode(',',$disablesort);
+
+        /* additional features */
+
+        $this->dlxl = (is_null($this->dlxl))? strtolower($this->controller_name).'/dlxl': $this->dlxl;
+
+
+        $this->printlink = (is_null($this->printlink) || $this->printlink == '')? strtolower($this->controller_name).'/print': $this->printlink;
+
+        //print_r($this->table_raw);
+
+        return View::make($this->report_view)
+            ->with('title',$this->title )
+            ->with('report_data', $this->report_data)
+            ->with('newbutton', $this->newbutton )
+            ->with('disablesort',$disablesort )
+            ->with('addurl',$this->addurl )
+            ->with('importurl',$this->importurl )
+            ->with('ajaxsource',URL::to($this->ajaxsource) )
+            ->with('ajaxdel',URL::to($this->delurl) )
+            ->with('ajaxdlxl',URL::to($this->dlxl) )
+            ->with('crumb',$this->crumb )
+            ->with('printlink', $this->printlink )
+            ->with('can_add', $this->can_add )
+            ->with('is_report',$this->is_report)
+            ->with('report_action',$this->report_action)
+            ->with('is_additional_action',$this->is_additional_action)
+            ->with('additional_action',$this->additional_action)
+            ->with('additional_filter',$this->additional_filter)
+            ->with('js_additional_param', $this->js_additional_param)
+            ->with('modal_sets', $this->modal_sets)
+            ->with('tables',$this->table_raw)
+            ->with('table_dnd', $this->table_dnd)
+            ->with('table_dnd_url', $this->table_dnd_url)
+            ->with('table_dnd_idx', $this->table_dnd_idx)
+            ->with('table_group', $this->table_group)
+            ->with('table_group_field', $this->table_group_field)
+            ->with('table_group_idx', $this->table_group_idx)
+            ->with('table_group_collapsible', $this->table_group_collapsible)
+            ->with('js_table_event', $this->js_table_event)
+            ->with('column_styles', $this->column_styles)
+            ->with('additional_page_data',$this->additional_page_data)
+            ->with('additional_table_param',$this->additional_table_param)
+            ->with('product_info_url',$this->product_info_url)
+            ->with('prefix',$this->prefix)
+            ->with('heads',$heads )
+            ->with('fields',$fields)
+            ->with('start_index',$start_index)
+            ->with('row',$this->rowdetail );
+
+
+    }
 
 
 	public function tableResponder()
@@ -762,9 +891,11 @@ class AdminController extends Controller {
         //array_unshift($fields, array('select',array('kind'=>false)));
         array_unshift($fields, array('seq',array('kind'=>false)));
 
+
         if($this->show_select == true){
             array_unshift($fields, array('select',array('kind'=>false)));
         }
+
 
         if($this->place_action == 'both' || $this->place_action == 'first'){
             array_unshift($fields, array('action',array('kind'=>false)));
@@ -795,199 +926,11 @@ class AdminController extends Controller {
 
         //$model = $this->SQL_make_join($model);
 
-        for($i = 0;$i < count($fields);$i++){
-            $idx = $i;
+        $comres = $this->SQLcompileSearch($fields, $model);
 
-            //print_r($fields[$i]);
+        $model = $comres['model'];
+        $q = $comres['q'];
 
-            $field = $fields[$i][0];
-            $type = $fields[$i][1]['kind'];
-
-
-            $qval = '';
-
-            $sfields = explode('.',$field);
-            $sub = '';
-            if(count($sfields) > 1){
-                $sub = $sfields[0];
-                $subfield = $sfields[1];
-            }
-
-            if(Input::get('sSearch_'.$i))
-            {
-                if( $type == 'text'){
-                    if($fields[$i][1]['query'] == 'like'){
-                        $pos = $fields[$i][1]['pos'];
-                        if($pos == 'both'){
-                            //$model->whereRegex($field,'/'.Input::get('sSearch_'.$idx).'/i');
-                            $model = $model->where($field,'like','%'.Input::get('sSearch_'.$idx).'%');
-                            /*
-                            if($sub == ''){
-                                $model = $model->where($field,'like','%'.Input::get('sSearch_'.$idx).'%');
-                            }else{
-                                $model = $model->whereHas($sub, function($q) use ($subfield, $idx) {
-                                    $q->where($subfield,'like','%'.Input::get('sSearch_'.$idx).'%');
-                                });
-                            }
-                            */
-
-                            $qval = new MongoRegex('/'.Input::get('sSearch_'.$idx).'/i');
-                        }else if($pos == 'before'){
-                            //$this->model->whereRegex($field,'/^'.Input::get('sSearch_'.$idx).'/i');
-                            $model = $model->where($field,'like','%'.Input::get('sSearch_'.$idx));
-
-                            $qval = new MongoRegex('/^'.Input::get('sSearch_'.$idx).'/i');
-                        }else if($pos == 'after'){
-                            //$this->model->whereRegex($field,'/'.Input::get('sSearch_'.$idx).'$/i');
-                            $model = $model->where($field,'like', Input::get('sSearch_'.$idx).'%');
-
-                            $qval = new MongoRegex('/'.Input::get('sSearch_'.$idx).'$/i');
-                        }
-                    }else{
-                        $qval = Input::get('sSearch_'.$idx);
-
-                        $model = $model->where($field,$qval);
-                    }
-
-                    $q[$field] = $qval;
-
-                }elseif($type == 'numeric' || $type == 'currency'){
-                    $str = Input::get('sSearch_'.$idx);
-
-                    $sign = null;
-
-                    $strval = trim(str_replace(array('<','>','='), '', $str));
-
-                    $qval = (double)$strval;
-
-                    /*
-                    if(is_null($sign)){
-                        $qval = new MongoInt32($strval);
-                    }else{
-                        $str = new MongoInt32($str);
-                        $qval = array($sign=>$str);
-                    }
-                    */
-
-
-                    if(strpos($str, "<=") !== false){
-                        $sign = '$lte';
-
-                        //$this->model->whereLte($field,$qval);
-                        $model = $model->where($field,'<=',$qval);
-
-                    }elseif(strpos($str, ">=") !== false){
-                        $sign = '$gte';
-
-                        //$this->model->whereGte($field,$qval);
-                        $model = $model->where($field,'>=',$qval);
-
-                    }elseif(strpos($str, ">") !== false){
-                        $sign = '$gt';
-
-                        //$this->model->whereGt($field,$qval);
-                        $model = $model->where($field,'>',$qval);
-
-                    }elseif(stripos($str, "<") !== false){
-                        $sign = '$lt';
-
-                        //$this->model->whereLt($field,$qval);
-                        $model = $model->where($field,'<',$qval);
-
-                    }else{
-
-                        $model = $model->where($field,'=',$qval);
-
-                    }
-
-                    //print $sign;
-                    if(!is_null($sign)){
-                        $qval = array($sign=>$qval);
-                    }
-
-                    $q[$field] = $qval;
-
-                }elseif($type == 'date'|| $type == 'datetime'){
-                    $datestring = Input::get('sSearch_'.$idx);
-                    $datestring = date('d-m-Y', $datestring / 1000);
-
-                    if (($timestamp = $datestring) === false) {
-
-                    } else {
-                        //$daystart = new MongoDate(strtotime($datestring.' 00:00:00'));
-                        //$dayend = new MongoDate(strtotime($datestring.' 23:59:59'));
-
-                        $daystart = $datestring.' 00:00:00';
-                        $dayend = $datestring.' 23:59:59';
-
-                        //$qval = array($field =>array('$gte'=>$daystart,'$lte'=>$dayend));
-                        //echo "$str == " . date('l dS \o\f F Y h:i:s A', $timestamp);
-
-                        $model = $model->whereBetween($field,array($daystart,$dayend));
-
-                    }
-                    $qval = array('$gte'=>$daystart,'$lte'=>$dayend);
-                    //$qval = Input::get('sSearch_'.$idx);
-
-                    $q[$field] = $qval;
-                }elseif($type == 'daterange'){
-                    $datestring = Input::get('sSearch_'.$idx);
-
-                    //print $datestring;
-
-                    if($datestring != ''){
-                        $dates = explode(' - ', $datestring);
-
-                        if(count($dates) == 2){
-
-                            $daystart = date('Y-m-d',strtotime($dates[0])).' 00:00:00';
-                            $dayend = date('Y-m-d',strtotime($dates[1])).' 23:59:59';
-
-                            //print $daystart;
-                            //$qval = array($field =>array('$gte'=>$daystart,'$lte'=>$dayend));
-
-                            $qval = array('$gte'=>$daystart,'$lte'=>$dayend);
-                            //$qval = Input::get('sSearch_'.$idx);
-
-                            $q[$field] = $qval;
-
-                            $model = $model->whereBetween($field,array($daystart,$dayend));
-
-
-                        }
-
-                    }
-
-                }elseif($type == 'datetimerange'){
-                    $datestring = Input::get('sSearch_'.$idx);
-
-                    if($datestring != ''){
-                        $dates = explode(' - ', $datestring);
-
-                        //print_r($dates);
-
-                        if(count($dates) == 2){
-                            $daystart = date('Y-m-d H:i:s',strtotime($dates[0]));
-                            $dayend = date('Y-m-d H:i:s',strtotime($dates[1]));
-
-                            //$qval = array($field =>array('$gte'=>$daystart,'$lte'=>$dayend));
-
-                            $qval = array('$gte'=>$daystart,'$lte'=>$dayend);
-                            //$qval = Input::get('sSearch_'.$idx);
-
-                            $model = $model->whereBetween($field,array($daystart,$dayend));
-
-                            $q[$field] = $qval;
-                        }
-
-                    }
-
-                }
-
-
-            }
-
-        }
 
         /* first column is always sequence number, so must be omitted */
 
@@ -1217,6 +1160,207 @@ class AdminController extends Controller {
             return Response::json($result);
         }
 
+    }
+
+    public function SQLcompileSearch($fields,$model){
+
+        $q = array();
+
+        for($i = 1;$i < count($fields);$i++){
+            $idx = $i;
+
+            //print_r($fields[$i]);
+
+            $field = $fields[$i][0];
+            $type = $fields[$i][1]['kind'];
+
+
+            $qval = '';
+
+            $sfields = explode('.',$field);
+            $sub = '';
+            if(count($sfields) > 1){
+                $sub = $sfields[0];
+                $subfield = $sfields[1];
+            }
+
+            if(Input::get('sSearch_'.$i ))
+            {
+                if( $type == 'text'){
+                    if($fields[$i][1]['query'] == 'like'){
+                        $pos = $fields[$i][1]['pos'];
+                        if($pos == 'both'){
+                            //$model->whereRegex($field,'/'.Input::get('sSearch_'.$idx).'/i');
+                            $model = $model->where($field,'like','%'.Input::get('sSearch_'.$idx).'%');
+                            /*
+                            if($sub == ''){
+                                $model = $model->where($field,'like','%'.Input::get('sSearch_'.$idx).'%');
+                            }else{
+                                $model = $model->whereHas($sub, function($q) use ($subfield, $idx) {
+                                    $q->where($subfield,'like','%'.Input::get('sSearch_'.$idx).'%');
+                                });
+                            }
+                            */
+
+                            $qval = new MongoRegex('/'.Input::get('sSearch_'.$idx).'/i');
+                        }else if($pos == 'before'){
+                            //$this->model->whereRegex($field,'/^'.Input::get('sSearch_'.$idx).'/i');
+                            $model = $model->where($field,'like','%'.Input::get('sSearch_'.$idx));
+
+                            $qval = new MongoRegex('/^'.Input::get('sSearch_'.$idx).'/i');
+                        }else if($pos == 'after'){
+                            //$this->model->whereRegex($field,'/'.Input::get('sSearch_'.$idx).'$/i');
+                            $model = $model->where($field,'like', Input::get('sSearch_'.$idx).'%');
+
+                            $qval = new MongoRegex('/'.Input::get('sSearch_'.$idx).'$/i');
+                        }
+                    }else{
+                        $qval = Input::get('sSearch_'.$idx);
+
+                        $model = $model->where($field,$qval);
+                    }
+
+                    $q[$field] = $qval;
+
+                }elseif($type == 'numeric' || $type == 'currency'){
+                    $str = Input::get('sSearch_'.$idx);
+
+                    $sign = null;
+
+                    $strval = trim(str_replace(array('<','>','='), '', $str));
+
+                    $qval = (double)$strval;
+
+                    /*
+                    if(is_null($sign)){
+                        $qval = new MongoInt32($strval);
+                    }else{
+                        $str = new MongoInt32($str);
+                        $qval = array($sign=>$str);
+                    }
+                    */
+
+
+                    if(strpos($str, "<=") !== false){
+                        $sign = '$lte';
+
+                        //$this->model->whereLte($field,$qval);
+                        $model = $model->where($field,'<=',$qval);
+
+                    }elseif(strpos($str, ">=") !== false){
+                        $sign = '$gte';
+
+                        //$this->model->whereGte($field,$qval);
+                        $model = $model->where($field,'>=',$qval);
+
+                    }elseif(strpos($str, ">") !== false){
+                        $sign = '$gt';
+
+                        //$this->model->whereGt($field,$qval);
+                        $model = $model->where($field,'>',$qval);
+
+                    }elseif(stripos($str, "<") !== false){
+                        $sign = '$lt';
+
+                        //$this->model->whereLt($field,$qval);
+                        $model = $model->where($field,'<',$qval);
+
+                    }else{
+
+                        $model = $model->where($field,'=',$qval);
+
+                    }
+
+                    //print $sign;
+                    if(!is_null($sign)){
+                        $qval = array($sign=>$qval);
+                    }
+
+                    $q[$field] = $qval;
+
+                }elseif($type == 'date'|| $type == 'datetime'){
+                    $datestring = Input::get('sSearch_'.$idx);
+                    $datestring = date('d-m-Y', $datestring / 1000);
+
+                    if (($timestamp = $datestring) === false) {
+
+                    } else {
+                        //$daystart = new MongoDate(strtotime($datestring.' 00:00:00'));
+                        //$dayend = new MongoDate(strtotime($datestring.' 23:59:59'));
+
+                        $daystart = $datestring.' 00:00:00';
+                        $dayend = $datestring.' 23:59:59';
+
+                        //$qval = array($field =>array('$gte'=>$daystart,'$lte'=>$dayend));
+                        //echo "$str == " . date('l dS \o\f F Y h:i:s A', $timestamp);
+
+                        $model = $model->whereBetween($field,array($daystart,$dayend));
+
+                    }
+                    $qval = array('$gte'=>$daystart,'$lte'=>$dayend);
+                    //$qval = Input::get('sSearch_'.$idx);
+
+                    $q[$field] = $qval;
+                }elseif($type == 'daterange'){
+                    $datestring = Input::get('sSearch_'.$idx);
+
+                    //print $datestring;
+
+                    if($datestring != ''){
+                        $dates = explode(' - ', $datestring);
+
+                        if(count($dates) == 2){
+
+                            $daystart = date('Y-m-d',strtotime($dates[0])).' 00:00:00';
+                            $dayend = date('Y-m-d',strtotime($dates[1])).' 23:59:59';
+
+                            //print $daystart;
+                            //$qval = array($field =>array('$gte'=>$daystart,'$lte'=>$dayend));
+
+                            $qval = array('$gte'=>$daystart,'$lte'=>$dayend);
+                            //$qval = Input::get('sSearch_'.$idx);
+
+                            $q[$field] = $qval;
+
+                            $model = $model->whereBetween($field,array($daystart,$dayend));
+
+
+                        }
+
+                    }
+
+                }elseif($type == 'datetimerange'){
+                    $datestring = Input::get('sSearch_'.$idx);
+
+                    if($datestring != ''){
+                        $dates = explode(' - ', $datestring);
+
+                        //print_r($dates);
+
+                        if(count($dates) == 2){
+                            $daystart = date('Y-m-d H:i:s',strtotime($dates[0]));
+                            $dayend = date('Y-m-d H:i:s',strtotime($dates[1]));
+
+                            //$qval = array($field =>array('$gte'=>$daystart,'$lte'=>$dayend));
+
+                            $qval = array('$gte'=>$daystart,'$lte'=>$dayend);
+                            //$qval = Input::get('sSearch_'.$idx);
+
+                            $model = $model->whereBetween($field,array($daystart,$dayend));
+
+                            $q[$field] = $qval;
+                        }
+
+                    }
+
+                }
+
+
+            }
+
+        }
+
+        return array('model'=>$model, 'q'=>$q);
     }
 
 	public function getAdd(){

@@ -28,11 +28,11 @@
             <li class="nav-parent">
               <a href="#"><i class="fa fa-cog"></i><span>Performance Reports</span> <span class="fa arrow"></span></a>
               <ul class="children collapse">
-                <li><a href="{{ URL::to('company') }}"> AFE Report - Lvl 2</a></li>
-                <li><a href="{{ URL::to('company') }}"> AFE Report - Lvl 3</a></li>
+                <li><a href="{{ URL::to('afelvltwo') }}"> AFE Report - Lvl 2</a></li>
+                <li><a href="{{ URL::to('afelvlthree') }}"> AFE Report - Lvl 3</a></li>
                 <li><a href="{{ URL::to('afegl') }}"> AFE Report - Ledger Query</a></li>
-                <li><a href="{{ URL::to('company') }}"> CC Report - Lvl 2</a></li>
-                <li><a href="{{ URL::to('company') }}"> CC Report - Lvl 3</a></li>
+                <li><a href="{{ URL::to('cclvltwo') }}"> CC Report - Lvl 2</a></li>
+                <li><a href="{{ URL::to('cclvlthree') }}"> CC Report - Lvl 3</a></li>
                 <li><a href="{{ URL::to('ccgl') }}"> CC Report - Ledger Query</a></li>
               </ul>
             </li>
@@ -41,6 +41,7 @@
               <ul class="children collapse">
                 <li class="{{ sa('gl') }}" ><a href="{{ URL::to('gl') }}"> General Ledger</a></li>
                 <li class="{{ sa('coa') }}" ><a href="{{ URL::to('coa') }}"> Chart Of Accounts</a></li>
+                <li class="{{ sa('coa') }}" ><a href="{{ URL::to('accgroup') }}"> Account Groups</a></li>
               </ul>
             </li>
             <li class="nav-parent">

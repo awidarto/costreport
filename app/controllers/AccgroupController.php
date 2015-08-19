@@ -1,6 +1,6 @@
 <?php
 
-class CoaController extends AdminController {
+class AccgroupController extends AdminController {
 
     public function __construct()
     {
@@ -14,7 +14,7 @@ class CoaController extends AdminController {
 
         $this->model = new Coa();
         //$this->model = DB::collection('documents');
-        $this->title = 'Chart of Accounts';
+        $this->title = 'Account Group';
 
     }
 
@@ -215,13 +215,13 @@ class CoaController extends AdminController {
 
         //print $this->model->where('docFormat','picture')->get()->toJSON();
 
-        $this->title = 'Chart of Accounts';
+        $this->title = 'Account Groups';
 
         $this->place_action = 'none';
-        $this->show_select = false;
+        $this->show_select = true;
         Breadcrumbs::addCrumb('Cost Report',URL::to( strtolower($this->controller_name) ));
 
-        $this->additional_filter = View::make(strtolower($this->controller_name).'.addfilter')->with('submit_url','coa')->with('sync_url', strtolower($this->controller_name).'/synclegacy'  )->render();
+        $this->additional_filter = View::make(strtolower($this->controller_name).'.addfilter')->with('submit_url','accgroup')->with('sync_url', strtolower($this->controller_name).'/synclegacy'  )->render();
 
         $this->js_additional_param = "aoData.push( { 'name':'acc-company', 'value': $('#acc-company').val() } );";
 
@@ -255,15 +255,17 @@ class CoaController extends AdminController {
 
         $company = strtolower($company);
 
-
         $this->def_order_by = 'ACNT_CODE';
         $this->def_order_dir = 'ASC';
         $this->place_action = 'none';
         $this->show_select = false;
 
-        $this->sql_key = 'TRANS_DATETIME';
+        $this->sql_key = 'ACNT_CODE';
         $this->sql_table_name = $company.'_acnt';
         $this->sql_connection = 'mysql2';
+
+        $this->place_action = 'none';
+        $this->show_select = true;
 
         return parent::postSQLIndex();
     }

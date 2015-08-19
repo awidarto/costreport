@@ -37,6 +37,14 @@ class HtmlTable {
         $table = '<table ' . $atts . ' >';
 
         if(!is_null($this->header)) {
+
+
+            $table .= '<thead>';
+            foreach ($this->header as $value) {
+                $table .= $this->createHeadRow($value);
+            }
+            $table .= '</thead>';
+            /*
             $table .= '<thead><tr>';
             foreach ($this->header as $value) {
                 if(is_array($value)){
@@ -46,6 +54,7 @@ class HtmlTable {
                 }
             }
             $table .= '</thead></tr>';
+            */
         }
 
         $table .= '<tbody>';
@@ -63,9 +72,32 @@ class HtmlTable {
             $row = '<tr>';
             foreach ($array as $value) {
                 if(is_array($value)){
-                    $row .= '<td '.$value['attr'].'>' . $value['value'] . '</td>';
+                    if(isset($value['attr'])){
+                        $row .= '<td '.$value['attr'].'>' . $value['value'] . '</td>';
+                    }else{
+                        $row .= '<td>' . $value['value'] . '</td>';
+                    }
                 }else{
                     $row .= '<td>' . $value . '</td>';
+                }
+            }
+            $row .= '</tr>';
+            return $row;
+    }
+
+    protected function createHeadRow($array = null)
+    {
+        if(is_null($array)) return false;
+            $row = '<tr>';
+            foreach ($array as $value) {
+                if(is_array($value)){
+                    if(isset($value['attr'])){
+                        $row .= '<th '.$value['attr'].'>' . $value['value'] . '</th>';
+                    }else{
+                        $row .= '<th>' . $value['value'] . '</th>';
+                    }
+                }else{
+                    $row .= '<th>' . $value . '</th>';
                 }
             }
             $row .= '</tr>';
