@@ -73,6 +73,23 @@
       .main-content .page-content > .header h2, .main-content .page-content > div > .header h2 {
         font-size: 20px !important;
       }
+
+      td h3, th h3{
+        font-weight: bold !important;
+        margin-top: 4px !important;
+        margin-bottom: 4px !important;
+      }
+
+      td h2, th h2{
+        font-size: 18px;
+        font-weight: bold !important;
+        margin-top: 4px !important;
+        margin-bottom: 4px !important;
+      }
+
+      .total{
+        font-weight: bold;
+      }
     </style>
 
   </head>

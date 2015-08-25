@@ -145,7 +145,8 @@ select.input-sm {
             <a href="{{ URL::to($print_url) }}" class="btn btn-sm btn-transparent btn-primary"><i class="fa fa-print"></i> Print Preview</a>
 
          </div>
-         <div class="col-md-4 command-bar">
+         <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4 command-bar">
+
             {{ $additional_filter }}
 
          </div>

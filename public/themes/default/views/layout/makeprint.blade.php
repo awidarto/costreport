@@ -34,6 +34,26 @@
 
       }
 
+      td h3, th h3{
+        font-weight: bold !important;
+        margin-top: 4px !important;
+        margin-bottom: 4px !important;
+      }
+
+      td h2, th h2{
+        font-size: 18px;
+        font-weight: bold !important;
+        margin-top: 4px !important;
+        margin-bottom: 4px !important;
+      }
+
+      .total{
+        font-weight: bold;
+        border-top: thin solid black !important;
+        border-bottom: double black !important;
+      }
+
+
     </style>
 
   </head>

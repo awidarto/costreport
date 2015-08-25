@@ -105,11 +105,13 @@ class JvsoabController extends AdminController {
 
         $this->place_action = 'none';
 
+        $this->can_add = false;
+
         $this->show_select = false;
 
         Breadcrumbs::addCrumb('Cost Report',URL::to( strtolower($this->controller_name) ));
 
-        $this->additional_filter = View::make(strtolower($this->controller_name).'.addfilter')->with('submit_url','afelvltwo')->render();
+        $this->additional_filter = View::make(strtolower($this->controller_name).'.addfilter')->with('submit_url','jvsoab')->render();
 
 
 
@@ -124,7 +126,7 @@ class JvsoabController extends AdminController {
             $period_from = date('Y0m',time());
         }
         // test value
-        $period_from = '2015001';
+        //$period_from = '2015001';
 
         if($period_to == '' || is_null($period_to) ){
             $period_to = date('Y0m',time());
@@ -181,266 +183,290 @@ class JvsoabController extends AdminController {
 
         $titlekeys = array();
 
-        foreach(Config::get('accgroup.jvsoab') as $h=>$v){
-            if($v['is_head']){
+        $sectiontitle = array();
 
-            }else{
-                $titlekeys[$v['key']] = $h;
+        foreach(Config::get('accgroup.jvsoab') as $sec=>$data){
+
+            $sectiontitle[$data['key']] = $sec;
+
+            $section = $data['key'];
+
+            foreach($data['data'] as $h=>$v){
+                if($v['is_head']){
+
+                }else{
+                    $titlekeys[$section][$v['key']] = $h;
+                }
             }
-        }
 
-        foreach(Config::get('accgroup.jvsoab') as $h=>$v){
-            if($v['is_head']){
+            foreach($data['data'] as $h=>$v){
+                if($v['is_head']){
 
-            }else{
-                $model = DB::connection($this->sql_connection)->table($this->sql_table_name);
+                }else{
+                    $model = DB::connection($this->sql_connection)->table($this->sql_table_name);
 
-                $model = $model
-                    ->select(DB::raw(
-                            $company.'_a_salfldg.ACCNT_CODE,'.
-                            $company.'_acnt.DESCR AS ADESCR,'.
-                            'SUM('.$company.'_a_salfldg.AMOUNT) as AMT'
-                        ));
+                    $model = $model
+                        ->select(DB::raw(
+                                $company.'_a_salfldg.ACCNT_CODE,'.
+                                $company.'_acnt.DESCR AS ADESCR,'.
+                                'SUM('.$company.'_a_salfldg.AMOUNT) as AMT'
+                            ));
 
-                    if($v['sql'] == 'in'){
-                        $model = $model
-                            ->whereIn($company.'_a_salfldg.ACCNT_CODE', explode(',',$v['val']));
-                    }elseif($v['sql'] == 'like'){
-
-                        if(is_array($v['val'])){
-                            $vals = $v['val'];
-                            $model = $model->where( function($q) use($vals,$company) {
-                                foreach($vals as $nval){
-                                    $q = $q->whereOr($company.'_a_salfldg.ACCNT_CODE','like',$nval);
-                                }
-                            });
-                        }else{
+                        if($v['sql'] == 'in'){
                             $model = $model
-                                ->where($company.'_a_salfldg.ACCNT_CODE','like',$v['val']);
+                                ->whereIn($company.'_a_salfldg.ACCNT_CODE', explode(',',$v['val']));
+                        }elseif($v['sql'] == 'like'){
+
+                            if(is_array($v['val'])){
+                                $vals = $v['val'];
+                                $model = $model->where( function($q) use($vals,$company) {
+                                    foreach($vals as $nval){
+                                        $q = $q->whereOr($company.'_a_salfldg.ACCNT_CODE','like',$nval);
+                                    }
+                                });
+                            }else{
+                                $model = $model
+                                    ->where($company.'_a_salfldg.ACCNT_CODE','like',$v['val']);
+                            }
+
                         }
 
-                    }
 
 
+                    $res = $model
+                                //->where($company.'_a_salfldg.ANAL_T1','=',$afe)
+                                ->where($company.'_a_salfldg.PERIOD','=', $period_from )
+                                ->leftJoin($company.'_acnt', $company.'_a_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
+                                ->groupBy($company.'_a_salfldg.ACCNT_CODE')
+                                ->get();
 
-                $res = $model
-                            //->where($company.'_a_salfldg.ANAL_T1','=',$afe)
-                            ->where($company.'_a_salfldg.PERIOD','=', $period_from )
-                            ->leftJoin($company.'_acnt', $company.'_a_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
-                            ->groupBy($company.'_a_salfldg.ACCNT_CODE')
-                            ->get();
-
-                $currentmonthset[$v['key']] = $res;
+                    $currentmonthset[$section][$v['key']] = $res;
+                }
             }
-        }
 
-        //priormonth ITD
-        $priormonthset = array();
+            //priormonth ITD
+            $priormonthset = array();
 
-        foreach(Config::get('accgroup.jvsoab') as $h=>$v){
-            if($v['is_head']){
+            foreach($data['data'] as $h=>$v){
+                if($v['is_head']){
 
-            }else{
-                $model = DB::connection($this->sql_connection)->table($this->sql_table_name);
+                }else{
+                    $model = DB::connection($this->sql_connection)->table($this->sql_table_name);
 
-                $model = $model
-                    ->select(DB::raw(
-                            $company.'_a_salfldg.ACCNT_CODE,'.
-                            $company.'_acnt.DESCR AS ADESCR,'.
-                            'SUM('.$company.'_a_salfldg.AMOUNT) as AMT'
-                        ));
+                    $model = $model
+                        ->select(DB::raw(
+                                $company.'_a_salfldg.ACCNT_CODE,'.
+                                $company.'_acnt.DESCR AS ADESCR,'.
+                                'SUM('.$company.'_a_salfldg.AMOUNT) as AMT'
+                            ));
 
-                    if($v['sql'] == 'in'){
-                        $model = $model
-                            ->whereIn($company.'_a_salfldg.ACCNT_CODE', explode(',',$v['val']));
-                    }elseif($v['sql'] == 'like'){
-
-                        if(is_array($v['val'])){
-                            $vals = $v['val'];
-                            $model = $model->where( function($q) use($vals,$company) {
-                                foreach($vals as $nval){
-                                    $q = $q->whereOr($company.'_a_salfldg.ACCNT_CODE','like',$nval);
-                                }
-                            });
-                        }else{
+                        if($v['sql'] == 'in'){
                             $model = $model
-                                ->where($company.'_a_salfldg.ACCNT_CODE','like',$v['val']);
+                                ->whereIn($company.'_a_salfldg.ACCNT_CODE', explode(',',$v['val']));
+                        }elseif($v['sql'] == 'like'){
+
+                            if(is_array($v['val'])){
+                                $vals = $v['val'];
+                                $model = $model->where( function($q) use($vals,$company) {
+                                    foreach($vals as $nval){
+                                        $q = $q->whereOr($company.'_a_salfldg.ACCNT_CODE','like',$nval);
+                                    }
+                                });
+                            }else{
+                                $model = $model
+                                    ->where($company.'_a_salfldg.ACCNT_CODE','like',$v['val']);
+                            }
+
                         }
 
-                    }
 
 
+                    $res = $model
+                                //->where($company.'_a_salfldg.ANAL_T1','=',$afe)
+                                ->where($company.'_a_salfldg.PERIOD','<', $period_from )
+                                ->leftJoin($company.'_acnt', $company.'_a_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
+                                ->groupBy($company.'_a_salfldg.ACCNT_CODE')
+                                ->get();
 
-                $res = $model
-                            //->where($company.'_a_salfldg.ANAL_T1','=',$afe)
-                            ->where($company.'_a_salfldg.PERIOD','<', $period_from )
-                            ->leftJoin($company.'_acnt', $company.'_a_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
-                            ->groupBy($company.'_a_salfldg.ACCNT_CODE')
-                            ->get();
-
-                $priormonthset[$v['key']] = $res;
+                    $priormonthset[$section][$v['key']] = $res;
+                }
             }
-        }
 
-        //print_r($priormonthset);
+            //print_r($priormonthset);
 
 
-        //currentmonth ITD
-        $currentmonthitdset = array();
+            //currentmonth ITD
+            $currentmonthitdset = array();
 
-        foreach(Config::get('accgroup.jvsoab') as $h=>$v){
-            if($v['is_head']){
+            foreach($data['data'] as $h=>$v){
+                if($v['is_head']){
 
-            }else{
-                $model = DB::connection($this->sql_connection)->table($this->sql_table_name);
+                }else{
+                    $model = DB::connection($this->sql_connection)->table($this->sql_table_name);
 
-                $model = $model
-                    ->select(DB::raw(
-                            $company.'_a_salfldg.ACCNT_CODE,'.
-                            $company.'_acnt.DESCR AS ADESCR,'.
-                            'SUM('.$company.'_a_salfldg.AMOUNT) as AMT'
-                        ));
+                    $model = $model
+                        ->select(DB::raw(
+                                $company.'_a_salfldg.ACCNT_CODE,'.
+                                $company.'_acnt.DESCR AS ADESCR,'.
+                                'SUM('.$company.'_a_salfldg.AMOUNT) as AMT'
+                            ));
 
-                    if($v['sql'] == 'in'){
-                        $model = $model
-                            ->whereIn($company.'_a_salfldg.ACCNT_CODE', explode(',',$v['val']));
-                    }elseif($v['sql'] == 'like'){
-
-                        if(is_array($v['val'])){
-                            $vals = $v['val'];
-                            $model = $model->where( function($q) use($vals,$company) {
-                                foreach($vals as $nval){
-                                    $q = $q->whereOr($company.'_a_salfldg.ACCNT_CODE','like',$nval);
-                                }
-                            });
-                        }else{
+                        if($v['sql'] == 'in'){
                             $model = $model
-                                ->where($company.'_a_salfldg.ACCNT_CODE','like',$v['val']);
+                                ->whereIn($company.'_a_salfldg.ACCNT_CODE', explode(',',$v['val']));
+                        }elseif($v['sql'] == 'like'){
+
+                            if(is_array($v['val'])){
+                                $vals = $v['val'];
+                                $model = $model->where( function($q) use($vals,$company) {
+                                    foreach($vals as $nval){
+                                        $q = $q->whereOr($company.'_a_salfldg.ACCNT_CODE','like',$nval);
+                                    }
+                                });
+                            }else{
+                                $model = $model
+                                    ->where($company.'_a_salfldg.ACCNT_CODE','like',$v['val']);
+                            }
+
                         }
 
-                    }
 
 
+                    $res = $model
+                                //->where($company.'_a_salfldg.ANAL_T1','=',$afe)
+                                ->where($company.'_a_salfldg.PERIOD','<=', $period_from )
+                                ->leftJoin($company.'_acnt', $company.'_a_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
+                                ->groupBy($company.'_a_salfldg.ACCNT_CODE')
+                                ->get();
 
-                $res = $model
-                            //->where($company.'_a_salfldg.ANAL_T1','=',$afe)
-                            ->where($company.'_a_salfldg.PERIOD','<=', $period_from )
-                            ->leftJoin($company.'_acnt', $company.'_a_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
-                            ->groupBy($company.'_a_salfldg.ACCNT_CODE')
-                            ->get();
-
-                $currentmonthitdset[$v['key']] = $res;
+                    $currentmonthitdset[$section][$v['key']] = $res;
+                }
             }
-        }
 
-        //print_r($currentmonthitdset);
+            //print_r($currentmonthitdset);
 
-        //prioryear ITD
-        $prioryearset = array();
+            //prioryear ITD
+            $prioryearset = array();
 
-        foreach(Config::get('accgroup.jvsoab') as $h=>$v){
-            if($v['is_head']){
+            foreach($data['data'] as $h=>$v){
+                if($v['is_head']){
 
-            }else{
-                $model = DB::connection($this->sql_connection)->table($this->sql_table_name);
+                }else{
+                    $model = DB::connection($this->sql_connection)->table($this->sql_table_name);
 
-                $model = $model
-                    ->select(DB::raw(
-                            $company.'_a_salfldg.ACCNT_CODE,'.
-                            $company.'_acnt.DESCR AS ADESCR,'.
-                            'SUM('.$company.'_a_salfldg.AMOUNT) as AMT'
-                        ));
+                    $model = $model
+                        ->select(DB::raw(
+                                $company.'_a_salfldg.ACCNT_CODE,'.
+                                $company.'_acnt.DESCR AS ADESCR,'.
+                                'SUM('.$company.'_a_salfldg.AMOUNT) as AMT'
+                            ));
 
-                    if($v['sql'] == 'in'){
-                        $model = $model
-                            ->whereIn($company.'_a_salfldg.ACCNT_CODE', explode(',',$v['val']));
-                    }elseif($v['sql'] == 'like'){
-
-                        if(is_array($v['val'])){
-                            $vals = $v['val'];
-                            $model = $model->where( function($q) use($vals,$company) {
-                                foreach($vals as $nval){
-                                    $q = $q->whereOr($company.'_a_salfldg.ACCNT_CODE','like',$nval);
-                                }
-                            });
-                        }else{
+                        if($v['sql'] == 'in'){
                             $model = $model
-                                ->where($company.'_a_salfldg.ACCNT_CODE','like',$v['val']);
+                                ->whereIn($company.'_a_salfldg.ACCNT_CODE', explode(',',$v['val']));
+                        }elseif($v['sql'] == 'like'){
+
+                            if(is_array($v['val'])){
+                                $vals = $v['val'];
+                                $model = $model->where( function($q) use($vals,$company) {
+                                    foreach($vals as $nval){
+                                        $q = $q->whereOr($company.'_a_salfldg.ACCNT_CODE','like',$nval);
+                                    }
+                                });
+                            }else{
+                                $model = $model
+                                    ->where($company.'_a_salfldg.ACCNT_CODE','like',$v['val']);
+                            }
+
                         }
 
-                    }
 
 
+                    $res = $model
+                                //->where($company.'_a_salfldg.ANAL_T1','=',$afe)
+                                ->where($company.'_a_salfldg.PERIOD','<', $period_from )
+                                ->leftJoin($company.'_acnt', $company.'_a_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
+                                ->groupBy($company.'_a_salfldg.ACCNT_CODE')
+                                ->get();
 
-                $res = $model
-                            //->where($company.'_a_salfldg.ANAL_T1','=',$afe)
-                            ->where($company.'_a_salfldg.PERIOD','<', $period_from )
-                            ->leftJoin($company.'_acnt', $company.'_a_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
-                            ->groupBy($company.'_a_salfldg.ACCNT_CODE')
-                            ->get();
-
-                $prioryearset[$v['key']] = $res;
+                    $prioryearset[$section][$v['key']] = $res;
+                }
             }
+
+            //print_r($prioryearset);
+
         }
 
-        //print_r($prioryearset);
+
+        //die();
+
 
         $tabdata = array();
-        foreach(Config::get('accgroup.jvsoab') as $h=>$v){
-            if($v['is_head']){
 
-            }else{
+        foreach(Config::get('accgroup.jvsoab') as $sec=>$data){
+
+            $section = $data['key'];
+
+            foreach($data['data'] as $h=>$v){
+
                 $key = $v['key'];
 
                 $dt = array();
-                foreach($currentmonthset[$key] as $data  ){
+                foreach($currentmonthset[$section][$key] as $data  ){
                     $data->PMAMT = 0;
                     $data->CMITDAMT = 0;
                     $data->PYAMT = 0;
-                    $dt[$data->ACCNT_CODE] = $data;
+                    $tabdata[$section][$key][$data->ACCNT_CODE] = $data;
                 }
 
-                $tabdata[$key] = $dt;
+                //$tabdata[$section] = $dt;
 
-                foreach($priormonthset[$key] as $data  ){
-                    if(isset($tabdata[$key][$data->ACCNT_CODE])){
-                        $tabdata[$key][$data->ACCNT_CODE]->PMAMT = $data->AMT;
-                    }else{
-                        $ndt = new stdClass();
-                        $ndt->ADESCR = $data->ADESCR;
-                        $ndt->AMT = 0;
-                        $ndt->PMAMT = $data->AMT;
-                        $ndt->CMITDAMT = 0;
-                        $ndt->PYAMT = 0;
-                        $tabdata[$key][$data->ACCNT_CODE] = $ndt;
+                if(isset($priormonthset[$section][$key])){
+                    foreach($priormonthset[$section][$key] as $data  ){
+                        if(isset($tabdata[$section][$key][$data->ACCNT_CODE])){
+                            $tabdata[$section][$key][$data->ACCNT_CODE]->PMAMT = $data->AMT;
+                        }else{
+                            $ndt = new stdClass();
+                            $ndt->ADESCR = $data->ADESCR;
+                            $ndt->AMT = 0;
+                            $ndt->PMAMT = $data->AMT;
+                            $ndt->CMITDAMT = 0;
+                            $ndt->PYAMT = 0;
+                            $tabdata[$section][$key][$data->ACCNT_CODE] = $ndt;
+                        }
                     }
                 }
 
-                foreach($currentmonthitdset[$key] as $data  ){
-                    if(isset($tabdata[$key][$data->ACCNT_CODE])){
-                        $tabdata[$key][$data->ACCNT_CODE]->CMITDAMT = $data->AMT;
-                    }else{
-                        $ndt = new stdClass();
-                        $ndt->ADESCR = $data->ADESCR;
-                        $ndt->AMT = 0;
-                        $ndt->PMAMT = 0;
-                        $ndt->CMITDAMT = $data->AMT;
-                        $ndt->PYAMT = 0;
-                        $tabdata[$key][$data->ACCNT_CODE] = $ndt;
+
+                if(isset($currentmonthitdset[$section][$key])){
+                    foreach($currentmonthitdset[$section][$key] as $data  ){
+                        if(isset($tabdata[$section][$key][$data->ACCNT_CODE])){
+                            $tabdata[$section][$key][$data->ACCNT_CODE]->CMITDAMT = $data->AMT;
+                        }else{
+                            $ndt = new stdClass();
+                            $ndt->ADESCR = $data->ADESCR;
+                            $ndt->AMT = 0;
+                            $ndt->PMAMT = 0;
+                            $ndt->CMITDAMT = $data->AMT;
+                            $ndt->PYAMT = 0;
+                            $tabdata[$section][$key][$data->ACCNT_CODE] = $ndt;
+                        }
                     }
                 }
 
-                foreach($prioryearset[$key] as $data  ){
-                    if(isset($tabdata[$key][$data->ACCNT_CODE])){
-                        $tabdata[$key][$data->ACCNT_CODE]->PYAMT = $data->AMT;
-                    }else{
-                        $ndt = new stdClass();
-                        $ndt->ADESCR = $data->ADESCR;
-                        $ndt->AMT = 0;
-                        $ndt->PMAMT = 0;
-                        $ndt->CMITDAMT = $data->AMT;
-                        $ndt->PYAMT = 0;
-                        $tabdata[$key][$data->ACCNT_CODE] = $ndt;
+                if(isset($prioryearset[$section][$key])){
+                    foreach($prioryearset[$section][$key] as $data  ){
+                        if(isset($tabdata[$section][$key][$data->ACCNT_CODE])){
+                            $tabdata[$section][$key][$data->ACCNT_CODE]->PYAMT = $data->AMT;
+                        }else{
+                            $ndt = new stdClass();
+                            $ndt->ADESCR = $data->ADESCR;
+                            $ndt->AMT = 0;
+                            $ndt->PMAMT = 0;
+                            $ndt->CMITDAMT = $data->AMT;
+                            $ndt->PYAMT = 0;
+                            $tabdata[$section][$key][$data->ACCNT_CODE] = $ndt;
+                        }
                     }
                 }
 
@@ -454,82 +480,160 @@ class JvsoabController extends AdminController {
 
         //ksort($tabdata);
 
+        $period_year = substr($period_from, 0,4);
+        $period_month = substr($period_from, 5,2);
+
+        $period_month = date('F', strtotime($period_year.'-'.$period_month ));
+
         $tattrs = array('width'=>'100%','class'=>'table table-bordered');
 
         $thead = array();
-        $tdataclr = array();
-        $tdataexp = array();
 
         $thead[] = array(
-                array('value'=>$companyname,'attr'=>'colspan=8')
+                array('value'=>'<h2>'.$companyname.'<h2>','attr'=>'colspan="9"')
             );
         $thead[] = array(
-                array('value'=>$this->title,'attr'=>'colspan=8')
+                array('value'=>'<h2>'.$this->title.'<h2>','attr'=>'colspan="9"')
             );
 
         $thead[] = array(
-                array('value'=>$period_from,'attr'=>'colspan=8')
+                array('value'=>'<h2>'.$period_month.' '.$period_year.'<h2>','attr'=>'colspan="9"')
             );
 
         $thead[] = array(
-                array('value'=>'','attr'=>'colspan=3'),
-                array('value'=>'Prior Month'),
+                array('value'=>'','attr'=>'colspan=4'),
+                array('value'=>'Prior Month ITD'),
                 array('value'=>'Current Month'),
-                array('value'=>'Current Month'),
-                array('value'=>'Prior Year'),
+                array('value'=>'Current Month ITD'),
+                array('value'=>'Prior Year ITD'),
                 array('value'=>'Current YTD')
             );
 
+        /*
         $thead[] = array(
-                array('value'=>'','attr'=>'colspan=3'),
+                array('value'=>'','attr'=>'colspan=4'),
                 array('value'=>'ITD'),
                 array('value'=>''),
                 array('value'=>'ITD'),
                 array('value'=>'ITD'),
                 array('value'=>'Movement')
             );
+        */
 
         $seq = 1;
         $tdata = array();
 
         $ck = '';
+
+        //print_r($titlekeys);
+        //print_r($sectiontitle);
+
+        //print_r($tabdata);
+        //die();
+
         foreach ($tabdata as $k=>$dm) {
 
+            //print($k);
+
+            //print $k;
            //if($ck != $k){
+
                 $tdata[] = array(
-                        array('value'=> $titlekeys[$k], 'attr'=>'colspan="3"'),
+                        array('value'=>'<h2>'.$sectiontitle[$k].'</h2>', 'attr'=>'colspan="4"'),
                         array('value'=>'', 'attr'=>'class="column-amt"' ),
                         array('value'=>'', 'attr'=>'class="column-amt"' ),
                         array('value'=>'', 'attr'=>'class="column-amt"' ),
                         array('value'=>'', 'attr'=>'class="column-amt"' ),
                         array('value'=>'', 'attr'=>'class="column-amt"' )
                     );
+
             //}
 
 
-            foreach($dm as $ac=>$m){
-
-                //print_r($m);
-
-                $movement = $m->CMITDAMT - $m->PYAMT;
+            foreach($dm as $ac=>$md){
 
                 $tdata[] = array(
-                        array('value'=>'&nbsp;'),
-                        array('value'=>$ac ),
-                        array('value'=>$m->ADESCR ),
-                        array('value'=>$m->PMAMT, 'attr'=>'class="column-amt"' ),
-                        array('value'=>$m->AMT, 'attr'=>'class="column-amt"' ),
-                        array('value'=>$m->CMITDAMT, 'attr'=>'class="column-amt"' ),
-                        array('value'=>$m->PYAMT, 'attr'=>'class="column-amt"' ),
-                        array('value'=>$movement , 'attr'=>'class="column-amt"' ),
+                        array('value'=>'&nbsp;' ),
+                        array('value'=> '<h3>'.$titlekeys[$k][$ac].'</h3>', 'attr'=>'colspan="3"'),
+                        array('value'=>'', 'attr'=>'class="column-amt"' ),
+                        array('value'=>'', 'attr'=>'class="column-amt"' ),
+                        array('value'=>'', 'attr'=>'class="column-amt"' ),
+                        array('value'=>'', 'attr'=>'class="column-amt"' ),
+                        array('value'=>'', 'attr'=>'class="column-amt"' )
                     );
 
-                $seq++;
+                /*
+                $tdata[] = array(
+                        array('value'=> $titlekeys[$k][$dm['key']], 'attr'=>'colspan="3"'),
+                        array('value'=>'', 'attr'=>'class="column-amt"' ),
+                        array('value'=>'', 'attr'=>'class="column-amt"' ),
+                        array('value'=>'', 'attr'=>'class="column-amt"' ),
+                        array('value'=>'', 'attr'=>'class="column-amt"' ),
+                        array('value'=>'', 'attr'=>'class="column-amt"' )
+                    );
+                */
+                //print_r($md);
+
+                $sum = new stdClass();
+
+                $sum->PMAMT = 0;
+                $sum->AMT = 0;
+                $sum->CMITDAMT = 0;
+                $sum->PYAMT = 0;
+                $sum->movement = 0;
+
+                foreach ($md as $mk => $m) {
+
+                    $movement = $m->CMITDAMT - $m->PYAMT;
+
+                        $sum->PMAMT += $m->PMAMT;
+                        $sum->AMT += $m->AMT;
+                        $sum->CMITDAMT += $m->CMITDAMT;
+                        $sum->PYAMT += $m->PYAMT;
+                        $sum->movement += $movement;
+
+                    $movement = 0;
+                    $tdata[] = array(
+                            array('value'=>'&nbsp;'),
+                            array('value'=>'&nbsp;'),
+                            array('value'=>$mk ),
+                            array('value'=>$m->ADESCR ),
+                            array('value'=>$m->PMAMT, 'attr'=>'class="column-amt"' ),
+                            array('value'=>$m->AMT, 'attr'=>'class="column-amt"' ),
+                            array('value'=>$m->CMITDAMT, 'attr'=>'class="column-amt"' ),
+                            array('value'=>$m->PYAMT, 'attr'=>'class="column-amt"' ),
+                            array('value'=>$movement , 'attr'=>'class="column-amt"' ),
+                        );
+
+                    $seq++;
+
+                }
 
             }
 
+                $tdata[] = array(
+                        array('value'=>'<h3> TOTAL '.$sectiontitle[$k].'</h3>', 'attr'=>'colspan="4"'),
+                        array('value'=>$sum->PMAMT, 'attr'=>'class="column-amt total"' ),
+                        array('value'=>$sum->AMT, 'attr'=>'class="column-amt total"' ),
+                        array('value'=>$sum->CMITDAMT, 'attr'=>'class="column-amt total"' ),
+                        array('value'=>$sum->PYAMT, 'attr'=>'class="column-amt total"' ),
+                        array('value'=>$sum->movement, 'attr'=>'class="column-amt total"' )
+                    );
+
+                $tdata[] = array(
+                        array('value'=>'', 'attr'=>'colspan="4"'),
+                        array('value'=>'', 'attr'=>'class="column-amt total"' ),
+                        array('value'=>'', 'attr'=>'class="column-amt total"' ),
+                        array('value'=>'', 'attr'=>'class="column-amt total"' ),
+                        array('value'=>'', 'attr'=>'class="column-amt total"' ),
+                        array('value'=>'', 'attr'=>'class="column-amt total"' )
+                    );
+
         }
 
+        //print_r($tdata);
+
+        //die();
 
         $mtable = new HtmlTable($tdata,$tattrs,$thead);
 
