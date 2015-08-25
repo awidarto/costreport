@@ -1,6 +1,6 @@
 <?php
 
-class CclvltwoController extends AdminController {
+class JvsoabController extends AdminController {
 
     public function __construct()
     {
@@ -14,7 +14,7 @@ class CclvltwoController extends AdminController {
 
         $this->model = new Gl();
         //$this->model = DB::collection('documents');
-        $this->title = 'CC Report - Lvl 2';
+        $this->title = 'Statement of Operation Account Balance';
 
     }
 
@@ -101,7 +101,7 @@ class CclvltwoController extends AdminController {
 
         //print $this->model->where('docFormat','picture')->get()->toJSON();
 
-        $this->title = 'CC Report - Lvl 2';
+        $this->title = 'Statement of Operation Account Balance';
 
         $this->place_action = 'none';
 
@@ -109,7 +109,8 @@ class CclvltwoController extends AdminController {
 
         Breadcrumbs::addCrumb('Cost Report',URL::to( strtolower($this->controller_name) ));
 
-        $this->additional_filter = View::make(strtolower($this->controller_name).'.addfilter')->with('submit_url','cclvltwo')->render();
+        $this->additional_filter = View::make(strtolower($this->controller_name).'.addfilter')->with('submit_url','afelvltwo')->render();
+
 
 
         $db = Config::get('lundin.main_db');
@@ -119,19 +120,36 @@ class CclvltwoController extends AdminController {
         $period_from = Input::get('acc-period-from');
         $period_to = Input::get('acc-period-to');
 
-
         if($period_from == '' || is_null($period_from) ){
             $period_from = date('Y0m',time());
         }
+        // test value
+        $period_from = '2015001';
 
         if($period_to == '' || is_null($period_to) ){
             $period_to = date('Y0m',time());
         }
 
+        $prior_year = substr($period_from, 0,4);
+        $prior_year = $prior_year - 1;
+
+        $prior_year .= '012';
+
+
+        //print $prior_year;
+
         $company = strtolower($company);
 
         if($company == ''){
             $company = Config::get('lundin.default_company');
+        }
+
+        $companylist = Prefs::getCompany( array('key'=>'DB_CODE','sign'=>'=','value'=>$company) )->CompanyToArray()->toArray();
+
+        if(count($companylist) > 0){
+            $companyname = $companylist[0]['DESCR'];
+        }else{
+            $companyname = '';
         }
 
         $afe = Input::get('acc-afe');
@@ -140,6 +158,7 @@ class CclvltwoController extends AdminController {
             $afes  = Prefs::getAfe($company)->AfeToArray();
             $afe = $afes[0]->ANL_CODE;
         }
+
 
         $company = strtolower($company);
 
@@ -157,150 +176,283 @@ class CclvltwoController extends AdminController {
 
         $tables = array();
 
-        $actualresult = $model
-            ->select(DB::raw(
-                    $company.'_a_salfldg.ACCNT_CODE,'.
-                    $company.'_acnt.DESCR AS ADESCR,'.
-                    'SUM('.$company.'_a_salfldg.AMOUNT) as AMT'
-                ))
-            ->where( function($q) use ($company){
-                $q->where($company.'_a_salfldg.ACCNT_CODE','like','9%')
-                    ->orWhere($company.'_a_salfldg.ACCNT_CODE','like','7%');
-            } )
-            ->where($company.'_a_salfldg.ANAL_T1','=',$afe)
-            ->where($company.'_a_salfldg.PERIOD','>=', $period_from )
-            ->where($company.'_a_salfldg.PERIOD','<=', $period_to )
-            ->leftJoin($company.'_acnt', $company.'_a_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
-            ->groupBy($company.'_a_salfldg.ACCNT_CODE')
-            ->get();
+        //current month
+        $currentmonthset = array();
+
+        $titlekeys = array();
+
+        foreach(Config::get('accgroup.jvsoab') as $h=>$v){
+            if($v['is_head']){
+
+            }else{
+                $titlekeys[$v['key']] = $h;
+            }
+        }
+
+        foreach(Config::get('accgroup.jvsoab') as $h=>$v){
+            if($v['is_head']){
+
+            }else{
+                $model = DB::connection($this->sql_connection)->table($this->sql_table_name);
+
+                $model = $model
+                    ->select(DB::raw(
+                            $company.'_a_salfldg.ACCNT_CODE,'.
+                            $company.'_acnt.DESCR AS ADESCR,'.
+                            'SUM('.$company.'_a_salfldg.AMOUNT) as AMT'
+                        ));
+
+                    if($v['sql'] == 'in'){
+                        $model = $model
+                            ->whereIn($company.'_a_salfldg.ACCNT_CODE', explode(',',$v['val']));
+                    }elseif($v['sql'] == 'like'){
+
+                        if(is_array($v['val'])){
+                            $vals = $v['val'];
+                            $model = $model->where( function($q) use($vals,$company) {
+                                foreach($vals as $nval){
+                                    $q = $q->whereOr($company.'_a_salfldg.ACCNT_CODE','like',$nval);
+                                }
+                            });
+                        }else{
+                            $model = $model
+                                ->where($company.'_a_salfldg.ACCNT_CODE','like',$v['val']);
+                        }
+
+                    }
 
 
-        $model = DB::connection($this->sql_connection)->table($company.'_a_salfldg');
 
-        $prioritdresult = $model
-            ->select(DB::raw(
-                    $company.'_a_salfldg.ACCNT_CODE,'.
-                    $company.'_acnt.DESCR AS ADESCR,'.
-                    'SUM('.$company.'_a_salfldg.AMOUNT) as AMT'
-                ))
-            ->where( function($q) use ($company){
-                $q->where($company.'_a_salfldg.ACCNT_CODE','like','9%')
-                    ->orWhere($company.'_a_salfldg.ACCNT_CODE','like','7%');
-            } )
-            ->where($company.'_a_salfldg.ANAL_T1','=',$afe)
-            ->where($company.'_a_salfldg.PERIOD','<', $period_from )
-            ->leftJoin($company.'_acnt', $company.'_a_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
-            ->groupBy($company.'_a_salfldg.ACCNT_CODE')
-            ->get();
+                $res = $model
+                            //->where($company.'_a_salfldg.ANAL_T1','=',$afe)
+                            ->where($company.'_a_salfldg.PERIOD','=', $period_from )
+                            ->leftJoin($company.'_acnt', $company.'_a_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
+                            ->groupBy($company.'_a_salfldg.ACCNT_CODE')
+                            ->get();
 
-        $model = DB::connection($this->sql_connection)->table($company.'_a_salfldg');
+                $currentmonthset[$v['key']] = $res;
+            }
+        }
 
-        $currentitdresult = $model
-            ->select(DB::raw(
-                    $company.'_a_salfldg.ACCNT_CODE,'.
-                    $company.'_acnt.DESCR AS ADESCR,'.
-                    'SUM('.$company.'_a_salfldg.AMOUNT) as AMT'
-                ))
-            ->where( function($q) use ($company){
-                $q->where($company.'_a_salfldg.ACCNT_CODE','like','9%')
-                    ->orWhere($company.'_a_salfldg.ACCNT_CODE','like','7%');
-            } )
-            ->where($company.'_a_salfldg.ANAL_T1','=',$afe)
-            ->where($company.'_a_salfldg.PERIOD','<=', $period_to )
-            ->leftJoin($company.'_acnt', $company.'_a_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
-            ->groupBy($company.'_a_salfldg.ACCNT_CODE')
-            ->get();
+        //priormonth ITD
+        $priormonthset = array();
 
-        $model = DB::connection($this->sql_connection)->table($company.'_b_salfldg');
+        foreach(Config::get('accgroup.jvsoab') as $h=>$v){
+            if($v['is_head']){
 
+            }else{
+                $model = DB::connection($this->sql_connection)->table($this->sql_table_name);
 
-        $budgetresult = $model
-            ->select(DB::raw(
-                    $company.'_b_salfldg.ACCNT_CODE,'.
-                    $company.'_acnt.DESCR AS ADESCR,'.
-                    'SUM('.$company.'_b_salfldg.AMOUNT) as AMT'
-                ))
-            ->where( function($q) use ($company){
-                $q->where($company.'_b_salfldg.ACCNT_CODE','like','9%')
-                    ->orWhere($company.'_b_salfldg.ACCNT_CODE','like','7%');
-            } )
-            ->where($company.'_b_salfldg.ANAL_T1','=',$afe)
-            ->where($company.'_b_salfldg.PERIOD','>=', $period_from )
-            ->where($company.'_b_salfldg.PERIOD','<=', $period_to )
-            ->leftJoin($company.'_acnt', $company.'_b_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
-            ->groupBy($company.'_b_salfldg.ACCNT_CODE')
-            ->get();
+                $model = $model
+                    ->select(DB::raw(
+                            $company.'_a_salfldg.ACCNT_CODE,'.
+                            $company.'_acnt.DESCR AS ADESCR,'.
+                            'SUM('.$company.'_a_salfldg.AMOUNT) as AMT'
+                        ));
+
+                    if($v['sql'] == 'in'){
+                        $model = $model
+                            ->whereIn($company.'_a_salfldg.ACCNT_CODE', explode(',',$v['val']));
+                    }elseif($v['sql'] == 'like'){
+
+                        if(is_array($v['val'])){
+                            $vals = $v['val'];
+                            $model = $model->where( function($q) use($vals,$company) {
+                                foreach($vals as $nval){
+                                    $q = $q->whereOr($company.'_a_salfldg.ACCNT_CODE','like',$nval);
+                                }
+                            });
+                        }else{
+                            $model = $model
+                                ->where($company.'_a_salfldg.ACCNT_CODE','like',$v['val']);
+                        }
+
+                    }
 
 
-        $model = DB::connection($this->sql_connection)->table($company.'_d_salfldg');
 
-        $revbudgetresult = $model
-            ->select(DB::raw(
-                    $company.'_d_salfldg.ACCNT_CODE,'.
-                    $company.'_acnt.DESCR AS ADESCR,'.
-                    'SUM('.$company.'_d_salfldg.AMOUNT) as AMT'
-                ))
-            ->where( function($q) use ($company){
-                $q->where($company.'_d_salfldg.ACCNT_CODE','like','9%')
-                    ->orWhere($company.'_d_salfldg.ACCNT_CODE','like','7%');
-            } )
-            ->where($company.'_d_salfldg.ANAL_T1','=',$afe)
-            ->where($company.'_d_salfldg.PERIOD','>=', $period_from )
-            ->where($company.'_d_salfldg.PERIOD','<=', $period_to )
-            ->leftJoin($company.'_acnt', $company.'_d_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
-            ->groupBy($company.'_d_salfldg.ACCNT_CODE')
-            ->get();
+                $res = $model
+                            //->where($company.'_a_salfldg.ANAL_T1','=',$afe)
+                            ->where($company.'_a_salfldg.PERIOD','<', $period_from )
+                            ->leftJoin($company.'_acnt', $company.'_a_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
+                            ->groupBy($company.'_a_salfldg.ACCNT_CODE')
+                            ->get();
+
+                $priormonthset[$v['key']] = $res;
+            }
+        }
+
+        //print_r($priormonthset);
+
+
+        //currentmonth ITD
+        $currentmonthitdset = array();
+
+        foreach(Config::get('accgroup.jvsoab') as $h=>$v){
+            if($v['is_head']){
+
+            }else{
+                $model = DB::connection($this->sql_connection)->table($this->sql_table_name);
+
+                $model = $model
+                    ->select(DB::raw(
+                            $company.'_a_salfldg.ACCNT_CODE,'.
+                            $company.'_acnt.DESCR AS ADESCR,'.
+                            'SUM('.$company.'_a_salfldg.AMOUNT) as AMT'
+                        ));
+
+                    if($v['sql'] == 'in'){
+                        $model = $model
+                            ->whereIn($company.'_a_salfldg.ACCNT_CODE', explode(',',$v['val']));
+                    }elseif($v['sql'] == 'like'){
+
+                        if(is_array($v['val'])){
+                            $vals = $v['val'];
+                            $model = $model->where( function($q) use($vals,$company) {
+                                foreach($vals as $nval){
+                                    $q = $q->whereOr($company.'_a_salfldg.ACCNT_CODE','like',$nval);
+                                }
+                            });
+                        }else{
+                            $model = $model
+                                ->where($company.'_a_salfldg.ACCNT_CODE','like',$v['val']);
+                        }
+
+                    }
+
+
+
+                $res = $model
+                            //->where($company.'_a_salfldg.ANAL_T1','=',$afe)
+                            ->where($company.'_a_salfldg.PERIOD','<=', $period_from )
+                            ->leftJoin($company.'_acnt', $company.'_a_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
+                            ->groupBy($company.'_a_salfldg.ACCNT_CODE')
+                            ->get();
+
+                $currentmonthitdset[$v['key']] = $res;
+            }
+        }
+
+        //print_r($currentmonthitdset);
+
+        //prioryear ITD
+        $prioryearset = array();
+
+        foreach(Config::get('accgroup.jvsoab') as $h=>$v){
+            if($v['is_head']){
+
+            }else{
+                $model = DB::connection($this->sql_connection)->table($this->sql_table_name);
+
+                $model = $model
+                    ->select(DB::raw(
+                            $company.'_a_salfldg.ACCNT_CODE,'.
+                            $company.'_acnt.DESCR AS ADESCR,'.
+                            'SUM('.$company.'_a_salfldg.AMOUNT) as AMT'
+                        ));
+
+                    if($v['sql'] == 'in'){
+                        $model = $model
+                            ->whereIn($company.'_a_salfldg.ACCNT_CODE', explode(',',$v['val']));
+                    }elseif($v['sql'] == 'like'){
+
+                        if(is_array($v['val'])){
+                            $vals = $v['val'];
+                            $model = $model->where( function($q) use($vals,$company) {
+                                foreach($vals as $nval){
+                                    $q = $q->whereOr($company.'_a_salfldg.ACCNT_CODE','like',$nval);
+                                }
+                            });
+                        }else{
+                            $model = $model
+                                ->where($company.'_a_salfldg.ACCNT_CODE','like',$v['val']);
+                        }
+
+                    }
+
+
+
+                $res = $model
+                            //->where($company.'_a_salfldg.ANAL_T1','=',$afe)
+                            ->where($company.'_a_salfldg.PERIOD','<', $period_from )
+                            ->leftJoin($company.'_acnt', $company.'_a_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
+                            ->groupBy($company.'_a_salfldg.ACCNT_CODE')
+                            ->get();
+
+                $prioryearset[$v['key']] = $res;
+            }
+        }
+
+        //print_r($prioryearset);
 
         $tabdata = array();
+        foreach(Config::get('accgroup.jvsoab') as $h=>$v){
+            if($v['is_head']){
 
-        foreach($actualresult as $a){
-            $tabdata[$a->ACCNT_CODE] = $a;
-            $tabdata[$a->ACCNT_CODE]->BAMT = 0;
-            $tabdata[$a->ACCNT_CODE]->DAMT = 0;
-            $tabdata[$a->ACCNT_CODE]->PITDAMT = 0;
-            $tabdata[$a->ACCNT_CODE]->CITDAMT = 0;
-        }
-
-        foreach($prioritdresult as $p){
-            if(isset($tabdata[$p->ACCNT_CODE])){
-                $tabdata[$p->ACCNT_CODE]->PITDAMT = $p->AMT;
-            }
-        }
-
-        foreach($currentitdresult as $c){
-            if(isset($tabdata[$c->ACCNT_CODE])){
-                $tabdata[$c->ACCNT_CODE]->CITDAMT = $c->AMT;
-            }
-        }
-
-        foreach($budgetresult as $b){
-            if(isset($tabdata[$b->ACCNT_CODE])){
-                $tabdata[$b->ACCNT_CODE]->BAMT = $b->AMT;
             }else{
-                $tabdata[$b->ACCNT_CODE] = $b;
-                $tabdata[$b->ACCNT_CODE]->BAMT = $b->AMT;
-                $tabdata[$b->ACCNT_CODE]->AMT = 0;
-                $tabdata[$b->ACCNT_CODE]->DAMT = 0;
-                $tabdata[$b->ACCNT_CODE]->PITDAMT = 0;
-                $tabdata[$b->ACCNT_CODE]->CITDAMT = 0;
+                $key = $v['key'];
+
+                $dt = array();
+                foreach($currentmonthset[$key] as $data  ){
+                    $data->PMAMT = 0;
+                    $data->CMITDAMT = 0;
+                    $data->PYAMT = 0;
+                    $dt[$data->ACCNT_CODE] = $data;
+                }
+
+                $tabdata[$key] = $dt;
+
+                foreach($priormonthset[$key] as $data  ){
+                    if(isset($tabdata[$key][$data->ACCNT_CODE])){
+                        $tabdata[$key][$data->ACCNT_CODE]->PMAMT = $data->AMT;
+                    }else{
+                        $ndt = new stdClass();
+                        $ndt->ADESCR = $data->ADESCR;
+                        $ndt->AMT = 0;
+                        $ndt->PMAMT = $data->AMT;
+                        $ndt->CMITDAMT = 0;
+                        $ndt->PYAMT = 0;
+                        $tabdata[$key][$data->ACCNT_CODE] = $ndt;
+                    }
+                }
+
+                foreach($currentmonthitdset[$key] as $data  ){
+                    if(isset($tabdata[$key][$data->ACCNT_CODE])){
+                        $tabdata[$key][$data->ACCNT_CODE]->CMITDAMT = $data->AMT;
+                    }else{
+                        $ndt = new stdClass();
+                        $ndt->ADESCR = $data->ADESCR;
+                        $ndt->AMT = 0;
+                        $ndt->PMAMT = 0;
+                        $ndt->CMITDAMT = $data->AMT;
+                        $ndt->PYAMT = 0;
+                        $tabdata[$key][$data->ACCNT_CODE] = $ndt;
+                    }
+                }
+
+                foreach($prioryearset[$key] as $data  ){
+                    if(isset($tabdata[$key][$data->ACCNT_CODE])){
+                        $tabdata[$key][$data->ACCNT_CODE]->PYAMT = $data->AMT;
+                    }else{
+                        $ndt = new stdClass();
+                        $ndt->ADESCR = $data->ADESCR;
+                        $ndt->AMT = 0;
+                        $ndt->PMAMT = 0;
+                        $ndt->CMITDAMT = $data->AMT;
+                        $ndt->PYAMT = 0;
+                        $tabdata[$key][$data->ACCNT_CODE] = $ndt;
+                    }
+                }
+
             }
         }
 
 
-        foreach($revbudgetresult as $d){
-            if(isset($tabdata[$d->ACCNT_CODE])){
-                $tabdata[$d->ACCNT_CODE]->DAMT = $d->AMT;
-            }else{
-                $tabdata[$d->ACCNT_CODE] = $d;
-                $tabdata[$d->ACCNT_CODE]->DAMT = $d->AMT;
-                $tabdata[$d->ACCNT_CODE]->AMT = 0;
-                $tabdata[$d->ACCNT_CODE]->BAMT = 0;
-                $tabdata[$d->ACCNT_CODE]->PITDAMT = 0;
-                $tabdata[$d->ACCNT_CODE]->CITDAMT = 0;
-            }
-        }
+        //print_r($tabdata);
 
-        ksort($tabdata);
+        //die();
+
+        //ksort($tabdata);
 
         $tattrs = array('width'=>'100%','class'=>'table table-bordered');
 
@@ -309,144 +461,74 @@ class CclvltwoController extends AdminController {
         $tdataexp = array();
 
         $thead[] = array(
-                array('value'=>'#','attr'=>'rowspan=2'),
-                array('value'=>'Account','attr'=>'colspan=2 rowspan=2 class="center"'),
-                array('value'=>'Budget','attr'=>'colspan=3'),
-                array('value'=>'Actual','attr'=>'colspan=3'),
-                array('value'=>'Variance','attr'=>'colspan=2')
+                array('value'=>$companyname,'attr'=>'colspan=8')
+            );
+        $thead[] = array(
+                array('value'=>$this->title,'attr'=>'colspan=8')
             );
 
         $thead[] = array(
-                array('value'=>'Original'),
-                array('value'=>'Revised'),
-                array('value'=>'Current Year'),
-                array('value'=>'Prior ITD'),
-                array('value'=>'Period To Date'),
-                array('value'=>'Current ITD'),
-                array('value'=>'$'),
-                array('value'=>'%')
+                array('value'=>$period_from,'attr'=>'colspan=8')
+            );
+
+        $thead[] = array(
+                array('value'=>'','attr'=>'colspan=3'),
+                array('value'=>'Prior Month'),
+                array('value'=>'Current Month'),
+                array('value'=>'Current Month'),
+                array('value'=>'Prior Year'),
+                array('value'=>'Current YTD')
+            );
+
+        $thead[] = array(
+                array('value'=>'','attr'=>'colspan=3'),
+                array('value'=>'ITD'),
+                array('value'=>''),
+                array('value'=>'ITD'),
+                array('value'=>'ITD'),
+                array('value'=>'Movement')
             );
 
         $seq = 1;
+        $tdata = array();
 
-        $sumexp = new stdClass();
-        $sumclr = new stdClass();
+        $ck = '';
+        foreach ($tabdata as $k=>$dm) {
 
-        $sumexp->BAMT = 0;
-        $sumexp->DAMT = 0;
-        $sumexp->BREV = 0;
-        $sumexp->PITDAMT = 0;
-        $sumexp->AMT = 0;
-        $sumexp->CITDAMT = 0;
-        $sumexp->VARIANCE = 0;
-        $sumexp->PCT = 0;
-
-        $sumclr->BAMT = 0;
-        $sumclr->DAMT = 0;
-        $sumclr->BREV = 0;
-        $sumclr->PITDAMT = 0;
-        $sumclr->AMT = 0;
-        $sumclr->CITDAMT = 0;
-        $sumclr->VARIANCE = 0;
-        $sumclr->PCT = 0;
-
-        foreach ($tabdata as $m) {
-
-
-            if($m->DAMT > 0){
-                $variance = $m->CITDAMT - $m->DAMT;
-                $pct = $variance / $m->DAMT * 100;
-
-                $brev = $m->DAMT - $m->BAMT;
-            }else{
-                $variance = 0;
-                $pct = 0;
-                $brev = 0;
-            }
-
-
-
-            if(preg_match('/^2009.*/', $m->ACCNT_CODE)){
-                $tdataclr[] = array(
-                        array('value'=>$seq),
-                        array('value'=>$m->ACCNT_CODE ),
-                        array('value'=>$m->ADESCR ),
+           //if($ck != $k){
+                $tdata[] = array(
+                        array('value'=> $titlekeys[$k], 'attr'=>'colspan="3"'),
                         array('value'=>'', 'attr'=>'class="column-amt"' ),
                         array('value'=>'', 'attr'=>'class="column-amt"' ),
-                        array('value'=>'' , 'attr'=>'class="column-amt"' ),
-                        array('value'=>$m->PITDAMT, 'attr'=>'class="column-amt"' ),
-                        array('value'=>$m->AMT, 'attr'=>'class="column-amt"' ),
-                        array('value'=>$m->CITDAMT, 'attr'=>'class="column-amt"' ),
-                        array('value'=>'' , 'attr'=>'class="column-amt"' ),
+                        array('value'=>'', 'attr'=>'class="column-amt"' ),
+                        array('value'=>'', 'attr'=>'class="column-amt"' ),
                         array('value'=>'', 'attr'=>'class="column-amt"' )
                     );
+            //}
 
 
+            foreach($dm as $ac=>$m){
 
-                    $sumclr->BAMT = '';
-                    $sumclr->DAMT = '';
-                    $sumclr->BREV = '';
-                    $sumclr->PITDAMT += $m->PITDAMT;
-                    $sumclr->AMT += $m->AMT;
-                    $sumclr->CITDAMT += $m->CITDAMT;
-                    $sumclr->VARIANCE = '';
-                    $sumclr->PCT = '';
+                //print_r($m);
 
+                $movement = $m->CMITDAMT - $m->PYAMT;
 
-            }else{
-                $tdataexp[] = array(
-                        array('value'=>$seq),
-                        array('value'=>$m->ACCNT_CODE ),
+                $tdata[] = array(
+                        array('value'=>'&nbsp;'),
+                        array('value'=>$ac ),
                         array('value'=>$m->ADESCR ),
-                        array('value'=>$m->BAMT, 'attr'=>'class="column-amt"' ),
-                        array('value'=>$m->DAMT, 'attr'=>'class="column-amt"' ),
-                        array('value'=>$brev , 'attr'=>'class="column-amt"' ),
-                        array('value'=>$m->PITDAMT, 'attr'=>'class="column-amt"' ),
+                        array('value'=>$m->PMAMT, 'attr'=>'class="column-amt"' ),
                         array('value'=>$m->AMT, 'attr'=>'class="column-amt"' ),
-                        array('value'=>$m->CITDAMT, 'attr'=>'class="column-amt"' ),
-                        array('value'=>$variance , 'attr'=>'class="column-amt"' ),
-                        array('value'=>$pct, 'attr'=>'class="column-amt"' )
+                        array('value'=>$m->CMITDAMT, 'attr'=>'class="column-amt"' ),
+                        array('value'=>$m->PYAMT, 'attr'=>'class="column-amt"' ),
+                        array('value'=>$movement , 'attr'=>'class="column-amt"' ),
                     );
 
-                    $sumexp->BAMT += $m->BAMT;
-                    $sumexp->DAMT += $m->DAMT;
-                    $sumexp->BREV += $brev;
-                    $sumexp->PITDAMT += $m->PITDAMT;
-                    $sumexp->AMT += $m->AMT;
-                    $sumexp->CITDAMT += $m->CITDAMT;
-                    $sumexp->VARIANCE += $variance;
-                    $sumexp->PCT += $pct;
+                $seq++;
 
             }
 
-            $seq++;
         }
-
-        $tdataclr[] = array(
-                array('value'=>'Total After Clearing', 'attr'=>'colspan=3 style="text-align:center;font-weight:bold;" ' ),
-                array('value'=>$sumclr->BAMT, 'attr'=>'class="column-amt"' ),
-                array('value'=>$sumclr->DAMT, 'attr'=>'class="column-amt"' ),
-                array('value'=>$sumclr->BREV , 'attr'=>'class="column-amt"' ),
-                array('value'=>$sumclr->PITDAMT, 'attr'=>'class="column-amt"' ),
-                array('value'=>$sumclr->AMT, 'attr'=>'class="column-amt"' ),
-                array('value'=>$sumclr->CITDAMT, 'attr'=>'class="column-amt"' ),
-                array('value'=>$sumclr->VARIANCE , 'attr'=>'class="column-amt"' ),
-                array('value'=>$sumclr->PCT, 'attr'=>'class="column-amt"' )
-            );
-
-        $tdataexp[] = array(
-                array('value'=>'Total Expenditure', 'attr'=>'colspan=3 style="text-align:center;font-weight:bold;" ' ),
-                array('value'=>$sumexp->BAMT, 'attr'=>'class="column-amt"' ),
-                array('value'=>$sumexp->DAMT, 'attr'=>'class="column-amt"' ),
-                array('value'=>$sumexp->BREV , 'attr'=>'class="column-amt"' ),
-                array('value'=>$sumexp->PITDAMT, 'attr'=>'class="column-amt"' ),
-                array('value'=>$sumexp->AMT, 'attr'=>'class="column-amt"' ),
-                array('value'=>$sumexp->CITDAMT, 'attr'=>'class="column-amt"' ),
-                array('value'=>$sumexp->VARIANCE , 'attr'=>'class="column-amt"' ),
-                array('value'=>$sumexp->PCT, 'attr'=>'class="column-amt"' )
-            );
-
-        $tdata = array_merge($tdataexp,$tdataclr);
 
 
         $mtable = new HtmlTable($tdata,$tattrs,$thead);
@@ -460,6 +542,7 @@ class CclvltwoController extends AdminController {
         }else{
             return parent::reportPageGenerator();
         }
+
 
     }
 
@@ -514,78 +597,6 @@ class CclvltwoController extends AdminController {
     public function getStatic()
     {
 
-        $this->heads = array(
-            array('Period',array('search'=>true,'sort'=>true, 'style'=>'min-width:90px;','daterange'=>true)),
-            array('Date',array('search'=>true,'sort'=>true, 'style'=>'min-width:100px;','daterange'=>true)),
-            array('JV Ref',array('search'=>true,'sort'=>true, 'style'=>'min-width:120px;')),
-            array('Account',array('search'=>true,'style'=>'min-width:100px;','sort'=>true)),
-            array('Account Description',array('search'=>true,'style'=>'min-width:125px;','sort'=>true)),
-            array('Reference Doc.',array('search'=>true,'sort'=>true)),
-            array('Orig. Currency',array('search'=>true,'sort'=>true)),
-            array('Orig. Amount',array('search'=>true,'sort'=>true)),
-            array('Conversion Rate',array('search'=>true,'sort'=>true)),
-            array('Base Amount',array('search'=>true,'sort'=>true)),
-            array('Transaction Description',array('search'=>true,'sort'=>true)),
-        );
-
-        //print $this->model->where('docFormat','picture')->get()->toJSON();
-
-        $this->title = 'AFE Report - Ledger Query';
-
-        $this->place_action = 'none';
-
-        $this->show_select = false;
-
-        Breadcrumbs::addCrumb('Cost Report',URL::to( strtolower($this->controller_name) ));
-
-        $this->additional_filter = View::make(strtolower($this->controller_name).'.addfilter')->with('submit_url','afegl/static')->render();
-
-        $this->js_additional_param = "aoData.push( { 'name':'acc-period-to', 'value': $('#acc-period-to').val() }, { 'name':'acc-period-from', 'value': $('#acc-period-from').val() }, { 'name':'acc-code-from', 'value': $('#acc-code-from').val() }, { 'name':'acc-code-to', 'value': $('#acc-code-to').val() }, { 'name':'acc-company', 'value': $('#acc-company').val() },{ 'name':'acc-afe', 'value': $('#acc-afe').val() } );";
-
-        $this->product_info_url = strtolower($this->controller_name).'/info';
-
-        $this->printlink = strtolower($this->controller_name).'/print';
-
-        //table generator part
-
-        $this->fields = array(
-            array('PERIOD',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
-            array('TRANS_DATETIME',array('kind'=>'daterange', 'query'=>'like','pos'=>'both','show'=>true)),
-            array('VCHR_NUM',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
-            array('ACCNT_CODE',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
-            array('j10_acnt.DESCR',array('kind'=>'text', 'alias'=>'ACC_DESCR' , 'query'=>'like', 'pos'=>'both','show'=>true)),
-            array('TREFERENCE',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true)),
-            array('CONV_CODE',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true)),
-            array('OTHER_AMT',array('kind'=>'text', 'query'=>'like','pos'=>'both','show'=>true, 'class'=>'column-amt' )),
-            array('BASE_RATE',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true, 'class'=>'column-amt' )),
-            array('AMOUNT',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true, 'class'=>'column-amt' )),
-            array('DESCRIPTN',array('kind'=>'text','query'=>'like','pos'=>'both','show'=>true))
-        );
-
-        $db = Config::get('lundin.main_db');
-
-        $company = Input::get('acc-company');
-
-        $company = strtolower($company);
-
-        if(Schema::hasTable( $db.'.'.$company.'_a_salfldg' )){
-            $company = Config::get('lundin.default_company');
-        }
-
-        $company = strtolower($company);
-
-        $this->def_order_by = 'TRANS_DATETIME';
-        $this->def_order_dir = 'DESC';
-        $this->place_action = 'none';
-        $this->show_select = false;
-
-        $this->sql_key = 'TRANS_DATETIME';
-        $this->sql_table_name = $company.'_a_salfldg';
-        $this->sql_connection = 'mysql2';
-
-        $this->responder_type = 's';
-
-        return parent::printGenerator();
     }
 
     public function getPrint()
@@ -628,7 +639,7 @@ class CclvltwoController extends AdminController {
 
         $company = strtolower($company);
 
-        if(Schema::hasTable( $db.'.'.$company.'_a_salfldg' )){
+        if($company == ''){
             $company = Config::get('lundin.default_company');
         }
 

@@ -438,23 +438,6 @@ class AfelvltwoController extends AdminController {
 
         $tables[] = $mtable->build();
 
-        $this->sql_table_name = $company.'_b_salfldg';
-
-        $model = DB::connection($this->sql_connection)->table($this->sql_table_name);
-
-        $bresult = $model->where('ACCNT_CODE','like','200%')
-            ->leftJoin($company.'_acnt', $company.'_b_salfldg.ACCNT_CODE', '=', $company.'_acnt.ACNT_CODE' )
-            ->groupBy('ACCNT_CODE')
-            ->get(
-                    array(
-                        'ACCNT_CODE',
-                        DB::raw( $company.'_acnt.DESCR AS ADESCR'),
-                        DB::raw( 'SUM(AMOUNT) as AMT' )
-                        )
-                );
-
-        //print_r($bresult);
-
         $this->table_raw = $tables;
 
         if($this->print == true){

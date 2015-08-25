@@ -185,8 +185,13 @@ class Prefs {
 
 
 //company
-    public static function getCompany(){
-        $c = Company::get();
+    public static function getCompany($where = null){
+
+        if(is_null($where)){
+            $c = Company::get();
+        }else{
+            $c = Company::where($where['key'],$where['sign'],$where['value'])->get();
+        }
 
         self::$company = $c;
         return new self;

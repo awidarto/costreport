@@ -69,6 +69,10 @@
           color: #666666 !important;
           padding-left: 0px !important;
       }
+
+      .main-content .page-content > .header h2, .main-content .page-content > div > .header h2 {
+        font-size: 20px !important;
+      }
     </style>
 
   </head>
@@ -122,8 +126,6 @@
               <!-- HERE COMES YOUR CONTENT -->
 
               <div class="panel">
-                <div class="panel-header panel-controls">
-                </div>
                 <div class="panel-content pagination2 table-responsive">
 
                   @yield('content')

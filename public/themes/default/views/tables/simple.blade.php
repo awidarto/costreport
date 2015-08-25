@@ -100,6 +100,10 @@ select.input-sm {
 .column-nowrap{
     white-space: nowrap !important;
 }
+
+.dataTable th{
+    font-size: 10px !important;
+}
 </style>
 
 
@@ -141,7 +145,7 @@ select.input-sm {
             <a href="{{ URL::to($print_url) }}" class="btn btn-sm btn-transparent btn-primary"><i class="fa fa-print"></i> Print Preview</a>
 
          </div>
-         <div class="col-md-6 command-bar">
+         <div class="col-md-4 command-bar">
             {{ $additional_filter }}
 
          </div>

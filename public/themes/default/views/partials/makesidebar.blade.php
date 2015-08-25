@@ -7,7 +7,14 @@
         </div>
         <div class="sidebar-inner">
           <ul class="nav nav-sidebar">
-            <li><a href="{{ URL::to('/') }}"><i class="fa fa-dashboard"></i><span>Dashboard</span></a></li>
+            <li class="nav-parent {{ hsa( array('gl','coa','') ) }} ">
+              <a href=""><i class="fa fa-table"></i><span>Query</span><span class="fa arrow"></span></a>
+              <ul class="children collapse">
+                <li class="{{ sa('gl') }}" ><a href="{{ URL::to('gl') }}"> General Ledger</a></li>
+                <li class="{{ sa('coa') }}" ><a href="{{ URL::to('coa') }}"> Chart Of Accounts</a></li>
+                <li class="{{ sa('coa') }}" ><a href="{{ URL::to('accgroup') }}"> Account Groups</a></li>
+              </ul>
+            </li>
             <li class="nav-parent">
               <a href="{{ URL::to('employee') }}"><i class="icon-users"></i><span>Financial Statements</span> <span class="fa arrow"></span></a>
               <ul class="children collapse">
@@ -20,9 +27,9 @@
             <li class="nav-parent">
               <a href="{{ URL::to('employee') }}"><i class="icon-users"></i><span>JV Reports</span> <span class="fa arrow"></span></a>
               <ul class="children collapse">
-                <li><a href="{{ URL::to('employee') }}"> Statement Acc. Balance</a></li>
-                <li><a href="{{ URL::to('/') }}"> Summary of Expenditure</a></li>
-                <li><a href="{{ URL::to('/') }}"> Partner Advance Reconciliation</a></li>
+                <li><a href="{{ URL::to('jvsoab') }}"> Statement Acc. Balance</a></li>
+                <li><a href="{{ URL::to('jvsoe') }}"> Summary of Expenditure</a></li>
+                <li><a href="{{ URL::to('jvpar') }}"> Partner Advance Reconciliation</a></li>
               </ul>
             </li>
             <li class="nav-parent">
@@ -34,14 +41,6 @@
                 <li><a href="{{ URL::to('cclvltwo') }}"> CC Report - Lvl 2</a></li>
                 <li><a href="{{ URL::to('cclvlthree') }}"> CC Report - Lvl 3</a></li>
                 <li><a href="{{ URL::to('ccgl') }}"> CC Report - Ledger Query</a></li>
-              </ul>
-            </li>
-            <li class="nav-parent {{ hsa( array('gl','coa') ) }} ">
-              <a href=""><i class="fa fa-table"></i><span>Query</span><span class="fa arrow"></span></a>
-              <ul class="children collapse">
-                <li class="{{ sa('gl') }}" ><a href="{{ URL::to('gl') }}"> General Ledger</a></li>
-                <li class="{{ sa('coa') }}" ><a href="{{ URL::to('coa') }}"> Chart Of Accounts</a></li>
-                <li class="{{ sa('coa') }}" ><a href="{{ URL::to('accgroup') }}"> Account Groups</a></li>
               </ul>
             </li>
             <li class="nav-parent">

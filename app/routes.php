@@ -58,6 +58,9 @@ Route::controller('afelvlthree', 'AfelvlthreeController');
 Route::controller('cclvltwo', 'CclvltwoController');
 Route::controller('cclvlthree', 'CclvlthreeController');
 
+Route::controller('jvsoab', 'JvsoabController');
+
+
 Route::controller('approval', 'ApprovalController');
 Route::controller('activity', 'ActivityController');
 Route::controller('access', 'AccessController');
@@ -72,7 +75,8 @@ Route::controller('ajax', 'AjaxController');
 
 Route::controller('profile', 'ProfileController');
 
-Route::get('/', 'DashboardController@getIndex');
+//Route::get('/', 'DashboardController@getIndex');
+Route::get('/', 'GlController@getIndex');
 
 
 Route::group(array('prefix' => 'api/v1' ), function()
